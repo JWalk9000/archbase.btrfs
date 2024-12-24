@@ -13,10 +13,13 @@ echo "You chose: $INSTALL_DISK"
 read -rp "Press [Enter] to continue or Ctrl+C to abort..."
 
 # 3. Check for existing partitions and prompt for confirmation to overwrite
+FORCE_FLAG=""
 if lsblk "$INSTALL_DISK" | grep -q part; then
   echo "Warning: Existing partitions found on $INSTALL_DISK."
   read -rp "Do you want to overwrite the existing partitions? This will delete all data on the disk. (y/N): " OVERWRITE_CONFIRMATION
-  if [[ ! "$OVERWRITE_CONFIRMATION" =~ ^([yY][eE][sS]|[yY])$ ]]; then
+  if [[ "$OVERWRITE_CONFIRMATION" =~ ^([yY][eE][sS]|[yY])$ ]]; then
+    FORCE_FLAG="-f"
+  else
     echo "Aborting installation."
     exit 1
   fi
@@ -53,10 +56,10 @@ else
 fi
 
 echo "=> Formatting EFI partition as FAT32"
-mkfs.fat -F32 "$EFI_PART"
+mkfs.fat -F32 "$EFI_PART" $FORCE_FLAG
 
 echo "=> Formatting primary partition as Btrfs"
-mkfs.btrfs "$BTRFS_PART"
+mkfs.btrfs "$BTRFS_PART" $FORCE_FLAG
 
 # 7. Create and mount Btrfs subvolumes
 echo "=> Mounting $BTRFS_PART to /mnt"
