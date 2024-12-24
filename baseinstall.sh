@@ -21,8 +21,15 @@ if lsblk "$INSTALL_DISK" | grep -q part; then
   if [[ "$OVERWRITE_CONFIRMATION" =~ ^([yY][eE][sS]|[yY])$ ]]; then
     FORCE_FLAG="-f"
     echo "=> Removing existing partitions on $INSTALL_DISK"
-    wipefs -a "$INSTALL_DISK"
-    sgdisk -Z "$INSTALL_DISK"
+    for PART in $(lsblk -ln -o NAME "$INSTALL_DISK" | grep -E "^${INSTALL_DISK#/dev/}p?[0-9]+$"); do
+      wipefs -a "/dev/$PART" || true
+      echo "=> Deleting partition $PART"
+      (
+      echo d # Delete partition
+      echo   # Accept default partition number
+      echo w # Write changes
+      ) | fdisk "$INSTALL_DISK"
+    done
   else
     echo "Aborting installation."
     exit 1
@@ -60,9 +67,10 @@ else
 fi
 
 echo "=> Formatting EFI partition as FAT32"
-mkfs.fat -F 32 $FORCE_FLAG "$EFI_PART" 
+mkfs.fat -F32 "$EFI_PART" $FORCE_FLAG
+
 echo "=> Formatting primary partition as Btrfs"
-mkfs.btrfs $FORCE_FLAG "$BTRFS_PART" 
+mkfs.btrfs "$BTRFS_PART" $FORCE_FLAG
 
 # 7. Create and mount Btrfs subvolumes
 echo "=> Mounting $BTRFS_PART to /mnt"
