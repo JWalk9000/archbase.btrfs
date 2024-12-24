@@ -20,14 +20,7 @@ if mount | grep "$INSTALL_DISK"; then
     umount "/dev/$PART"
   done
 fi
-
-# 4. Check for mounted partitions and unmount them
-if mount | grep "$INSTALL_DISK"; then
-  echo "=> Unmounting mounted partitions on $INSTALL_DISK"
-  for PART in $(lsblk -ln -o NAME,MOUNTPOINT "$INSTALL_DISK" | awk '$2 != "" {print $1}'); do
-    umount "/dev/$PART"
-  done
-fi
+partprobe "$INSTALL_DISK"
 
 # 5. Check for existing partitions and prompt for confirmation to overwrite
 FORCE_FLAG=""
