@@ -108,8 +108,6 @@ select gui_choice in "${!gui_options[@]}" "None"; do
     echo "=> Skipping GUI installation."
     break
   elif [[ -n "${gui_options[$gui_choice]}" ]]; then
-    echo "=> Installing $gui_choice"
-    eval "${gui_options[$gui_choice]}"
     echo "=> Installing Yay"
     pacman -S --needed git base-devel
     git clone https://aur.archlinux.org/yay.git
@@ -117,6 +115,8 @@ select gui_choice in "${!gui_options[@]}" "None"; do
     makepkg -si
     cd ..
     rm -rf yay
+    echo "=> Installing $gui_choice"
+    eval "${gui_options[$gui_choice]}"
     break
   else
     echo "Invalid choice. Please try again."
