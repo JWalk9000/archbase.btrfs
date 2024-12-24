@@ -6,9 +6,10 @@ clear
 echo "=== List of available block devices ==="
 lsblk -o NAME,SIZE,TYPE,MODEL
 echo "======================================="
-read -rp "Enter the block device you want to install to (e.g. /dev/sda or /dev/nvme0n1): " INSTALL_DISK
+read -rp "Enter the block device you want to install to (e.g. sda or nvme0n1): " INSTALL_DISK
 
 # 2. Confirm the user choice
+INSTALL_DISK="/dev/$INSTALL_DISK"
 echo "You chose: $INSTALL_DISK"
 read -rp "Press [Enter] to continue or Ctrl+C to abort..."
 
