@@ -59,10 +59,9 @@ else
 fi
 
 echo "=> Formatting EFI partition as FAT32"
-mkfs.fat -F32 "$EFI_PART" $FORCE_FLAG
-
+mkfs.fat -F 32 $FORCE_FLAG "$EFI_PART" 
 echo "=> Formatting primary partition as Btrfs"
-mkfs.btrfs "$BTRFS_PART" $FORCE_FLAG
+mkfs.btrfs $FORCE_FLAG "$BTRFS_PART" 
 
 # 7. Create and mount Btrfs subvolumes
 echo "=> Mounting $BTRFS_PART to /mnt"
