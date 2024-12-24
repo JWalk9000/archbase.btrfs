@@ -101,7 +101,7 @@ select gui_choice in "${!gui_options[@]}" "None"; do
       pacman -S --needed git base-devel
       git clone https://aur.archlinux.org/yay.git
       cd yay
-      makepkg -si
+      sudo -u nobody bash -c 'cd yay && makepkg -si --noconfirm'
       cd ..
       rm -rf yay
     fi
@@ -112,7 +112,7 @@ select gui_choice in "${!gui_options[@]}" "None"; do
     pacman -S --needed git base-devel
     git clone https://aur.archlinux.org/yay.git
     cd yay
-    makepkg -si
+    sudo -u nobody bash -c 'cd yay && makepkg -si --noconfirm'
     cd ..
     rm -rf yay
     echo "=> Installing $gui_choice"
