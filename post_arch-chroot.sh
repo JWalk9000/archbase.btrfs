@@ -22,7 +22,22 @@ echo "=> Enabling NetworkManager and SSH"
 systemctl enable NetworkManager
 systemctl enable sshd
 
-# 3. Interactive bootloader installation
+# 3. Install pciutils and detect NVIDIA GPU
+echo "=> Installing pciutils"
+pacman -S pciutils
+
+echo "=> Detecting NVIDIA GPU"
+if lspci | grep -i nvidia; then
+  read -rp "NVIDIA GPU detected. Would you like to install GPU drivers? (y/N): " INSTALL_GPU
+  if [[ "$INSTALL_GPU" =~ ^([yY][eE][sS]|[yY])$ ]]; then
+    echo "=> Installing GPU drivers"
+    bash <(curl -s 'https://YOUR_RAW_GITHUB_URL/install_gpu.sh')
+  fi
+else
+  echo "No NVIDIA GPU detected."
+fi
+
+# 4. Interactive bootloader installation
 echo "=> Choose a bootloader to install:"
 echo "   1) GRUB"
 echo "   2) systemd-boot"
@@ -54,11 +69,11 @@ case "$BOOTLOADER_CHOICE" in
     ;;
 esac
 
-# 4. Root password
+# 5. Root password
 echo "=> Set root password"
 passwd root
 
-# 5. Interactive new user creation
+# 6. Interactive new user creation
 read -rp "Enter new username: " NEW_USER
 useradd -m -s /bin/bash "$NEW_USER"
 
@@ -71,8 +86,37 @@ fi
 echo "=> Set password for $NEW_USER"
 passwd "$NEW_USER"
 
-# 6. Final instructions
+# 7. Optional GUI installation
+declare -A gui_options=(
+  ["ML4W Hyperland-Full"]="bash <(curl -s https://raw.githubusercontent.com/mylinuxforwork/dotfiles/main/setup-arch.sh)"
+  ["ML4W Hyperland-Starter"]="bash <(curl -s https://raw.githubusercontent.com/mylinuxforwork/hyprland-starter/main/setup.sh)"
+)
+
+echo "=> Choose an optional GUI to install:"
+select gui_choice in "${!gui_options[@]}" "None"; do
+  if [[ "$gui_choice" == "None" ]]; then
+    echo "=> Skipping GUI installation."
+    break
+  elif [[ -n "${gui_options[$gui_choice]}" ]]; then
+    echo "=> Installing $gui_choice"
+    eval "${gui_options[$gui_choice]}"
+    break
+  else
+    echo "Invalid choice. Please try again."
+  fi
+done
+
+# 8. Final instructions
 echo "=> Done with post-install setup."
 echo "=> You can now exit chroot, unmount, and reboot."
 echo "=> (Optional) After reboot, install additional packages or run any custom scripts:"
 echo "   bash <(curl -s 'https://YOUR_RAW_GITHUB_URL/custom_script.sh')"
+
+# 9. Reboot option
+read -rp "Reboot now? (y/N): " REBOOT_CHOICE
+if [[ "$REBOOT_CHOICE" =~ ^([yY][eE][sS]|[yY])$ ]]; then
+  echo "=> Rebooting..."
+  reboot
+else
+  echo "=> Reboot skipped. You can reboot manually later."
+fi
