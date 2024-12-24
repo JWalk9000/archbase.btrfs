@@ -22,24 +22,7 @@ echo "=> Enabling NetworkManager and SSH"
 systemctl enable NetworkManager
 systemctl enable sshd
 
-# 3. Root password
-echo "=> Set root password"
-passwd root
-
-# 4. Interactive new user creation
-read -rp "Enter new username: " NEW_USER
-useradd -m -s /bin/bash "$NEW_USER"
-
-read -rp "Should $NEW_USER have sudo privileges? (y/N): " SUDO_CHOICE
-if [[ "$SUDO_CHOICE" =~ ^([yY][eE][sS]|[yY])$ ]]; then
-  usermod -aG wheel "$NEW_USER"
-  echo "%wheel ALL=(ALL) ALL" >> /etc/sudoers
-fi
-
-echo "=> Set password for $NEW_USER"
-passwd "$NEW_USER"
-
-# 5. Interactive bootloader installation
+# 3. Interactive bootloader installation
 echo "=> Choose a bootloader to install:"
 echo "   1) GRUB"
 echo "   2) systemd-boot"
@@ -59,10 +42,34 @@ case "$BOOTLOADER_CHOICE" in
   *)
     echo "=> Installing GRUB (default)"
     pacman -S grub
-    grub-install --target=i386-pc /dev/sda
+    if [ -d /sys/firmware/efi ]; then
+      echo "=> Detected EFI system"
+      pacman -S efibootmgr
+      grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB
+    else
+      echo "=> Detected BIOS/MBR system"
+      grub-install --target=i386-pc /dev/sda
+    fi
     grub-mkconfig -o /boot/grub/grub.cfg
     ;;
 esac
+
+# 4. Root password
+echo "=> Set root password"
+passwd root
+
+# 5. Interactive new user creation
+read -rp "Enter new username: " NEW_USER
+useradd -m -s /bin/bash "$NEW_USER"
+
+read -rp "Should $NEW_USER have sudo privileges? (y/N): " SUDO_CHOICE
+if [[ "$SUDO_CHOICE" =~ ^([yY][eE][sS]|[yY])$ ]]; then
+  usermod -aG wheel "$NEW_USER"
+  echo "%wheel ALL=(ALL) ALL" >> /etc/sudoers
+fi
+
+echo "=> Set password for $NEW_USER"
+passwd "$NEW_USER"
 
 # 6. Final instructions
 echo "=> Done with post-install setup."
