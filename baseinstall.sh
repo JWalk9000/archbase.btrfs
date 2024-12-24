@@ -13,7 +13,15 @@ INSTALL_DISK="/dev/$INSTALL_DISK"
 echo "You chose: $INSTALL_DISK"
 read -rp "Press [Enter] to continue or Ctrl+C to abort..."
 
-# 3. Check for existing partitions and prompt for confirmation to overwrite
+# 4. Check for mounted partitions and unmount them
+if mount | grep "$INSTALL_DISK"; then
+  echo "=> Unmounting mounted partitions on $INSTALL_DISK"
+  for PART in $(lsblk -ln -o NAME,MOUNTPOINT "$INSTALL_DISK" | awk '$2 != "" {print $1}'); do
+    umount "/dev/$PART"
+  done
+fi
+
+# 5. Check for existing partitions and prompt for confirmation to overwrite
 FORCE_FLAG=""
 if lsblk "$INSTALL_DISK" | grep -q part; then
   echo "Warning: Existing partitions found on $INSTALL_DISK."
@@ -36,7 +44,7 @@ if lsblk "$INSTALL_DISK" | grep -q part; then
   fi
 fi
 
-# 4. Set system clock
+# 6. Set system clock
 echo "=> Enabling network time synchronization"
 timedatectl set-ntp true
 
@@ -57,7 +65,7 @@ echo   # Last sector (Accept default: varies)
 echo w # Write changes
 ) | fdisk "$INSTALL_DISK"
 
-# 6. Format the partitions
+# 7. Format the partitions
 if [[ "$INSTALL_DISK" == *"nvme"* ]]; then
   EFI_PART="${INSTALL_DISK}p1"
   BTRFS_PART="${INSTALL_DISK}p2"
@@ -72,7 +80,7 @@ mkfs.fat -F 32 "$EFI_PART"
 echo "=> Formatting primary partition as Btrfs"
 mkfs.btrfs "$BTRFS_PART" $FORCE_FLAG
 
-# 7. Create and mount Btrfs subvolumes
+# 8. Create and mount Btrfs subvolumes
 echo "=> Mounting $BTRFS_PART to /mnt"
 mount "$BTRFS_PART" /mnt
 
@@ -91,19 +99,19 @@ mount -o subvol=@home "$BTRFS_PART" /mnt/home
 mkdir -p /mnt/.snapshots
 mount -o subvol=@snapshots "$BTRFS_PART" /mnt/.snapshots
 
-# 8. Mount EFI partition
+# 9. Mount EFI partition
 echo "=> Mounting EFI partition at /mnt/boot"
 mkdir -p /mnt/boot
 mount "$EFI_PART" /mnt/boot
 
-# 9. Install base system
+# 10. Install base system
 echo "=> Installing base system with linux-zen kernel and essential packages"
 pacstrap /mnt base linux-zen linux-firmware btrfs-progs base-devel git curl nano openssh networkmanager
 
 echo "=> Generating fstab"
 genfstab -U /mnt >> /mnt/etc/fstab
 
-# 10. Instructions to proceed
+# 11. Instructions to proceed
 echo "========================================================="
 echo "Base system installation complete."
 echo "Next steps:"
@@ -117,7 +125,7 @@ echo "  4) Install and configure your preferred bootloader (e.g., GRUB, systemd-
 echo "  5) Exit chroot, unmount, and reboot."
 echo "========================================================="
 
-# 11. Option to automatically arch-chroot and run post_baseinstall.sh
+# 12. Option to automatically arch-chroot and run post_baseinstall.sh
 read -rp "Would you like to automatically arch-chroot and run the post_baseinstall.sh script? (y/N): " CHROOT_CHOICE
 if [[ "$CHROOT_CHOICE" =~ ^([yY][eE][sS]|[yY])$ ]]; then
   arch-chroot /mnt /bin/bash -c "
