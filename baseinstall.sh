@@ -51,6 +51,7 @@ if lsblk "$INSTALL_DISK" | grep -q part; then
     exit 1
   fi
 fi
+partprobe "$INSTALL_DISK"
 
 # 6. Set system clock
 echo "=> Enabling network time synchronization"
@@ -72,6 +73,7 @@ echo   # First sector (Accept default: varies)
 echo   # Last sector (Accept default: varies)
 echo w # Write changes
 ) | fdisk "$INSTALL_DISK"
+partprobe "$INSTALL_DISK"
 
 # 7. Format the partitions
 if [[ "$INSTALL_DISK" == *"nvme"* ]]; then
