@@ -13,6 +13,14 @@ INSTALL_DISK="/dev/$INSTALL_DISK"
 echo "You chose: $INSTALL_DISK"
 read -rp "Press [Enter] to continue or Ctrl+C to abort..."
 
+# 3. Check for mounted partitions and unmount them
+if mount | grep "$INSTALL_DISK"; then
+  echo "=> Unmounting mounted partitions on $INSTALL_DISK"
+  for PART in $(lsblk -ln -o NAME,MOUNTPOINT "$INSTALL_DISK" | awk '$2 != "" {print $1}'); do
+    umount "/dev/$PART"
+  done
+fi
+
 # 4. Check for mounted partitions and unmount them
 if mount | grep "$INSTALL_DISK"; then
   echo "=> Unmounting mounted partitions on $INSTALL_DISK"
