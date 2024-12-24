@@ -112,7 +112,7 @@ select gui_choice in "${!gui_options[@]}" "None"; do
     pacman -S --needed git base-devel
     git clone https://aur.archlinux.org/yay.git
     cd yay
-    sudo -u nobody bash -c 'cd yay && makepkg -si --noconfirm'
+    sudo -u nobody bash -c 'fakroot makepkg -si --noconfirm'
     cd ..
     rm -rf yay
     echo "=> Installing $gui_choice"
