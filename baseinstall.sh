@@ -16,12 +16,22 @@ read -rp "Press [Enter] to continue or Ctrl+C to abort..."
 echo "=> Enabling network time synchronization"
 timedatectl set-ntp true
 
-# 4. Automated partitioning with GPT
+# 4. Automated partitioning with fdisk
 echo "=> Creating GPT partition table and partitions on $INSTALL_DISK"
-parted -s "$INSTALL_DISK" mklabel gpt
-parted -s "$INSTALL_DISK" mkpart primary fat32 1MiB 512MiB
-parted -s "$INSTALL_DISK" set 1 esp on
-parted -s "$INSTALL_DISK" mkpart primary btrfs 512MiB 100%
+(
+echo g # Create a new empty GPT partition table
+echo n # Add a new partition
+echo 1 # Partition number
+echo   # First sector (Accept default: 1MiB)
+echo +512M # Last sector (Accept default: varies)
+echo t # Change partition type
+echo 1 # EFI System
+echo n # Add a new partition
+echo 2 # Partition number
+echo   # First sector (Accept default: varies)
+echo   # Last sector (Accept default: varies)
+echo w # Write changes
+) | fdisk "$INSTALL_DISK"
 
 # 5. Format the partitions
 if [[ "$INSTALL_DISK" == *"nvme"* ]]; then
