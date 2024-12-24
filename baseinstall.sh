@@ -12,11 +12,21 @@ read -rp "Enter the block device you want to install to (e.g. /dev/sda or /dev/n
 echo "You chose: $INSTALL_DISK"
 read -rp "Press [Enter] to continue or Ctrl+C to abort..."
 
-# 3. Set system clock
+# 3. Check for existing partitions and prompt for confirmation to overwrite
+if lsblk "$INSTALL_DISK" | grep -q part; then
+  echo "Warning: Existing partitions found on $INSTALL_DISK."
+  read -rp "Do you want to overwrite the existing partitions? This will delete all data on the disk. (y/N): " OVERWRITE_CONFIRMATION
+  if [[ ! "$OVERWRITE_CONFIRMATION" =~ ^([yY][eE][sS]|[yY])$ ]]; then
+    echo "Aborting installation."
+    exit 1
+  fi
+fi
+
+# 4. Set system clock
 echo "=> Enabling network time synchronization"
 timedatectl set-ntp true
 
-# 4. Automated partitioning with fdisk
+# 5. Automated partitioning with fdisk
 echo "=> Creating GPT partition table and partitions on $INSTALL_DISK"
 (
 echo g # Create a new empty GPT partition table
@@ -33,7 +43,7 @@ echo   # Last sector (Accept default: varies)
 echo w # Write changes
 ) | fdisk "$INSTALL_DISK"
 
-# 5. Format the partitions
+# 6. Format the partitions
 if [[ "$INSTALL_DISK" == *"nvme"* ]]; then
   EFI_PART="${INSTALL_DISK}p1"
   BTRFS_PART="${INSTALL_DISK}p2"
@@ -48,7 +58,7 @@ mkfs.fat -F32 "$EFI_PART"
 echo "=> Formatting primary partition as Btrfs"
 mkfs.btrfs "$BTRFS_PART"
 
-# 6. Create and mount Btrfs subvolumes
+# 7. Create and mount Btrfs subvolumes
 echo "=> Mounting $BTRFS_PART to /mnt"
 mount "$BTRFS_PART" /mnt
 
@@ -67,19 +77,19 @@ mount -o subvol=@home "$BTRFS_PART" /mnt/home
 mkdir -p /mnt/.snapshots
 mount -o subvol=@snapshots "$BTRFS_PART" /mnt/.snapshots
 
-# 7. Mount EFI partition
+# 8. Mount EFI partition
 echo "=> Mounting EFI partition at /mnt/boot"
 mkdir -p /mnt/boot
 mount "$EFI_PART" /mnt/boot
 
-# 8. Install base system
+# 9. Install base system
 echo "=> Installing base system with linux-zen kernel and essential packages"
 pacstrap /mnt base linux-zen linux-firmware btrfs-progs base-devel git curl nano openssh networkmanager
 
 echo "=> Generating fstab"
 genfstab -U /mnt >> /mnt/etc/fstab
 
-# 9. Instructions to proceed
+# 10. Instructions to proceed
 echo "========================================================="
 echo "Base system installation complete."
 echo "Next steps:"
@@ -88,7 +98,17 @@ echo "  2) Inside the chroot, set time with:"
 echo "     ln -sf /usr/share/zoneinfo/Region/City /etc/localtime"
 echo "     hwclock --systohc"
 echo "  3) (Optional) Run additional setup:"
-echo "     bash <(curl -s 'https://YOUR_RAW_GITHUB_URL/post_arch-chroot.sh')"
+echo "     bash <(curl -s 'https://raw.githubusercontent.com/JWalk9000/archbase.btrfs/refs/heads/main/post_baseinstall.sh')"
 echo "  4) Install and configure your preferred bootloader (e.g., GRUB, systemd-boot, or rEFInd)."
 echo "  5) Exit chroot, unmount, and reboot."
 echo "========================================================="
+
+# 11. Option to automatically arch-chroot and run post_baseinstall.sh
+read -rp "Would you like to automatically arch-chroot and run the post_baseinstall.sh script? (y/N): " CHROOT_CHOICE
+if [[ "$CHROOT_CHOICE" =~ ^([yY][eE][sS]|[yY])$ ]]; then
+  arch-chroot /mnt /bin/bash -c "
+    ln -sf /usr/share/zoneinfo/Region/City /etc/localtime
+    hwclock --systohc
+    bash <(curl -s 'https://raw.githubusercontent.com/JWalk9000/archbase.btrfs/refs/heads/main/post_baseinstall.sh')
+  "
+fi
