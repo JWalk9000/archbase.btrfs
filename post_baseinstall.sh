@@ -31,7 +31,7 @@ if lspci | grep -i nvidia; then
   read -rp "NVIDIA GPU detected. Would you like to install GPU drivers? (y/N): " INSTALL_GPU
   if [[ "$INSTALL_GPU" =~ ^([yY][eE][sS]|[yY])$ ]]; then
     echo "=> Installing GPU drivers"
-    bash <(curl -s 'https://raw.githubusercontent.com/JWalk9000/archbase.btrfs/refs/heads/main/install_gpu.sh')
+    bash <(curl -s 'https://YOUR_RAW_GITHUB_URL/install_gpu.sh')
   fi
 else
   echo "No NVIDIA GPU detected."
@@ -110,11 +110,14 @@ done
 echo "=> Done with post-install setup."
 echo "=> You can now exit chroot, unmount, and reboot."
 echo "=> (Optional) After reboot, install additional packages or run any custom scripts:"
+echo "   bash <(curl -s 'https://YOUR_RAW_GITHUB_URL/custom_script.sh')"
 
 # 9. Reboot option
 read -rp "Reboot now? (y/N): " REBOOT_CHOICE
 if [[ "$REBOOT_CHOICE" =~ ^([yY][eE][sS]|[yY])$ ]]; then
-  echo "=> Rebooting..."
+  echo "=> Exiting chroot, unmounting /mnt, and rebooting..."
+  exit
+  umount -R /mnt
   reboot
 else
   echo "=> Reboot skipped. You can reboot manually later."
