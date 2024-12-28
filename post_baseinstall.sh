@@ -97,24 +97,12 @@ select gui_choice in "${!gui_options[@]}" "None"; do
   if [[ "$gui_choice" == "None" ]]; then
     read -rp "Would you like to install Yay (AUR helper)? (y/N): " INSTALL_YAY
     if [[ "$INSTALL_YAY" =~ ^([yY][eE][sS]|[yY])$ ]]; then
-      echo "=> Installing Yay"
-      pacman -S --needed git base-devel fakeroot
-      git clone https://aur.archlinux.org/yay.git
-      cd yay
-      sudo -u nobody bash -c 'fakeroot makepkg -si --noconfirm'
-      cd ..
-      rm -rf yay
+      bash /path/to/install_yay.sh
     fi
     echo "=> Skipping GUI installation."
     break
   elif [[ -n "${gui_options[$gui_choice]}" ]]; then
-    echo "=> Installing Yay"
-    pacman -S --needed git base-devel fakeroot
-    git clone https://aur.archlinux.org/yay.git
-    cd yay
-    sudo -u nobody bash -c 'fakeroot makepkg -si --noconfirm'
-    cd ..
-    rm -rf yay
+    bash /path/to/install_yay.sh
     echo "=> Installing $gui_choice"
     eval "${gui_options[$gui_choice]}"
     break

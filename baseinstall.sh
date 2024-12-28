@@ -81,7 +81,7 @@ echo "=> Formatting EFI partition as FAT32"
 mkfs.fat -F 32 "$EFI_PART" 
 
 echo "=> Formatting primary partition as Btrfs"
-mkfs.btrfs "$BTRFS_PART" $FORCE_FLAG
+mkfs.btrfs "$BTRFS_PART" "$FORCE_FLAG"
 
 # 8. Create and mount Btrfs subvolumes
 echo "=> Mounting $BTRFS_PART to /mnt"
@@ -129,7 +129,7 @@ echo "  5) Exit chroot, unmount, and reboot."
 echo "========================================================="
 
 # 12. Option to automatically arch-chroot and run post_baseinstall.sh
-read -rp "Would you like to automatically arch-chroot and run the post_baseinstall.sh script? (y/N): " CHROOT_CHOICE
+read -rp "Would you like to chroot into your new install and setup the bootloader, hostname, root password, and a user? (y/N): " CHROOT_CHOICE
 if [[ "$CHROOT_CHOICE" =~ ^([yY][eE][sS]|[yY])$ ]]; then
   arch-chroot /mnt /bin/bash -c "
     ln -sf /usr/share/zoneinfo/Region/City /etc/localtime
