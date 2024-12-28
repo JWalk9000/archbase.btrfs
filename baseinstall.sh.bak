@@ -1,38 +1,18 @@
 #!/usr/bin/env bash
 set -e
 
-# Define colors
-GREEN='\033[0;32m'
-NC='\033[0m' # No Color
-
-# Function to display the header
-display_header() {
-  clear
-  echo -e "${GREEN}"
-  cat <<"EOF"
-   ____         __       ____       
-  /  _/__  ___ / /____ _/ / /__ ____
- _/ // _ \(_-</ __/ _ `/ / / -_) __/
-/___/_//_/___/\__/\_,_/_/_/\__/_/   
-EOF
-  echo -e "${NC}"
-}
-
-# Display the header at the start
-display_header
-
 RAW_GITHUB="https://raw.githubusercontent.com"
 REPO="jwalk9000/archbase.btrfs/refs/heads/main"
 
+
 # 1. List block devices and prompt user for target install disk
-display_header
+clear
 echo "=== List of available block devices ==="
 lsblk -o NAME,SIZE,TYPE,MODEL
 echo "======================================="
 read -rp "Enter the block device you want to install to (e.g. sda or nvme0n1): " INSTALL_DISK
 
 # 2. Confirm the user choice
-display_header
 INSTALL_DISK="/dev/$INSTALL_DISK"
 echo "You chose: $INSTALL_DISK"
 read -rp "Press [Enter] to continue or Ctrl+C to abort..."
@@ -44,34 +24,37 @@ if mount | grep "$INSTALL_DISK"; then
     umount "/dev/$PART"
   done
 fi
+partprobe "$INSTALL_DISK"
 
-# 4. Check for existing partitions and prompt for confirmation to overwrite
+# 5. Check for existing partitions and prompt for confirmation to overwrite
+FORCE_FLAG=""
 if lsblk "$INSTALL_DISK" | grep -q part; then
-  display_header
   echo "Warning: Existing partitions found on $INSTALL_DISK."
   read -rp "Do you want to overwrite the existing partitions? This will delete all data on the disk. (y/N): " OVERWRITE_CONFIRMATION
   if [[ "$OVERWRITE_CONFIRMATION" =~ ^([yY][eE][sS]|[yY])$ ]]; then
+    FORCE_FLAG="-f"
     echo "=> Removing existing partitions on $INSTALL_DISK"
     for PART in $(lsblk -ln -o NAME "$INSTALL_DISK" | grep -E "^${INSTALL_DISK#/dev/}p?[0-9]+$"); do
       wipefs -a "/dev/$PART" || true
+      echo "=> Deleting partition $PART"
+      (
+      echo d # Delete partition
+      echo   # Accept default partition number
+      echo w # Write changes
+      ) | fdisk "$INSTALL_DISK"
     done
-    echo "=> Deleting existing partitions on $INSTALL_DISK"
-    for PART in $(lsblk -ln -o NAME "$INSTALL_DISK" | grep -E "^${INSTALL_DISK#/dev/}p?[0-9]+$"); do
-      echo "d" | fdisk "$INSTALL_DISK"
-    done
-    echo "w" | fdisk "$INSTALL_DISK"
-    partprobe "$INSTALL_DISK"
   else
     echo "Aborting installation."
     exit 1
   fi
 fi
+partprobe "$INSTALL_DISK"
 
-# 5. Set system clock
+# 6. Set system clock
 echo "=> Enabling network time synchronization"
 timedatectl set-ntp true
 
-# 6. Automated partitioning with fdisk
+# 5. Automated partitioning with fdisk
 echo "=> Creating GPT partition table and partitions on $INSTALL_DISK"
 (
 echo g # Create a new empty GPT partition table
@@ -99,10 +82,10 @@ else
 fi
 
 echo "=> Formatting EFI partition as FAT32"
-mkfs.fat -F 32 "$EFI_PART"
+mkfs.fat -F 32 "$EFI_PART" 
 
 echo "=> Formatting primary partition as Btrfs"
-mkfs.btrfs -f "$BTRFS_PART"
+mkfs.btrfs "$BTRFS_PART" "$FORCE_FLAG"
 
 # 8. Create and mount Btrfs subvolumes
 echo "=> Mounting $BTRFS_PART to /mnt"
@@ -150,12 +133,11 @@ echo "  5) Exit chroot, unmount, and reboot."
 echo "========================================================="
 
 # 12. Option to automatically arch-chroot and run post_baseinstall.sh
-display_header
-read -rp "Would you like to automatically arch-chroot and run the post_baseinstall.sh script? (y/N): " CHROOT_CHOICE
+read -rp "Would you like to chroot into your new install and setup the bootloader, hostname, root password, and a user? (y/N): " CHROOT_CHOICE
 if [[ "$CHROOT_CHOICE" =~ ^([yY][eE][sS]|[yY])$ ]]; then
   arch-chroot /mnt /bin/bash -c "
     ln -sf /usr/share/zoneinfo/Region/City /etc/localtime
     hwclock --systohc
-    bash <(curl -s 'https://raw.githubusercontent.com/JWalk9000/archbase.btrfs/refs/heads/main/post_baseinstall.sh')
+    bash <(curl -s $RAW_GITHUB/$REPO/post_baseinstall.sh)
   "
 fi
