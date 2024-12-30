@@ -58,13 +58,8 @@ target_disk
 
 # 2. Check for mounted partitions and unmount them
 display_header
-#if mount | grep "$INSTALL_DISK"; then
-#  echo "=> Unmounting mounted partitions on $INSTALL_DISK"
-#  sleep 1.5
-#  for PART in $(lsblk -ln -o NAME,MOUNTPOINT "$INSTALL_DISK" | awk '$2 != "" {print $1}'); do
-#    umount "/dev/$PART"
-#  done
-#fi
+echo "=> Checking for mounted partitions on $INSTALL_DISK"
+sleep 1.5
 if mount | grep "$INSTALL_DISK"; then
   echo "=> Unmounting mounted partitions on $INSTALL_DISK"
   sleep 1.5
@@ -131,24 +126,32 @@ else
 fi
 
 echo "=> Formatting EFI partition as FAT32"
+sleep 1.5
 mkfs.fat -F 32 "$EFI_PART"
 
 echo "=> Formatting primary partition as Btrfs"
+sleep 1.5
 mkfs.btrfs -f "$BTRFS_PART"
 
 # 8. Create and mount Btrfs subvolumes
 echo "=> Mounting $BTRFS_PART to /mnt"
+sleep 1.5
 mount "$BTRFS_PART" /mnt
 
-echo "=> Creating subvolumes"
+echo "=> Creating BTRFS subvolumes"
+sleep 1.5
 btrfs subvolume create /mnt/@
 btrfs subvolume create /mnt/@home
 btrfs subvolume create /mnt/@snapshots
+echo "=> BTRFS subvolumes /@, /@home, and @/snapshots created"
+sleep 1.5
 
 echo "=> Unmounting /mnt to re-mount subvolumes"
+sleep 1.5
 umount /mnt
 
 echo "=> Remounting subvolumes"
+sleep 1.5
 mount -o subvol=@ "$BTRFS_PART" /mnt
 mkdir -p /mnt/home
 mount -o subvol=@home "$BTRFS_PART" /mnt/home
@@ -157,14 +160,17 @@ mount -o subvol=@snapshots "$BTRFS_PART" /mnt/.snapshots
 
 # 9. Mount EFI partition
 echo "=> Mounting EFI partition at /mnt/boot"
+sleep 1.5
 mkdir -p /mnt/boot
 mount "$EFI_PART" /mnt/boot
 
 # 10. Install base system
 echo "=> Installing base system with linux-zen kernel and essential packages"
+sleep 1.5
 pacstrap /mnt base linux-zen linux-firmware btrfs-progs base-devel git curl nano openssh networkmanager pciutils usbutils
 
-echo "=> Generating fstab"
+echo "=> Generating fstab file and chrooting into new system"
+sleep 1.5
 genfstab -U /mnt >> /mnt/etc/fstab
 
 # 11. Download and execute chroot_setup.sh inside the chroot environment
