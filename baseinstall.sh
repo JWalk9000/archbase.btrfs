@@ -68,17 +68,16 @@ display_header
 if mount | grep "$INSTALL_DISK"; then
   echo "=> Unmounting mounted partitions on $INSTALL_DISK"
   sleep 1.5
-  for PART in $(lsblk -ln -o NAME,MOUNTPOINT "$INSTALL_DISK" | awk '$2 != "" {print $1}'); do
-    echo "Unmounting /dev/$PART"
-    umount "/dev/$PART" || echo "Failed to unmount /dev/$PART"
+  for MOUNT_POINT in $(lsblk -ln -o MOUNTPOINT "$INSTALL_DISK" | grep -v '^$'); do
+    echo "Unmounting $MOUNT_POINT"
+    umount -R "$MOUNT_POINT" || echo "Failed to unmount $MOUNT_POINT"
     sleep 1
   done
-  echo "=> All partitions unmounted"
+  echo "=> All mount points unmounted"
   sleep 1
 else
   echo "No mounted partitions found on $INSTALL_DISK"
-  sleep 1
-fi
+  sl
 
 
 
