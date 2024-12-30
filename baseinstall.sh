@@ -71,10 +71,13 @@ if mount | grep "$INSTALL_DISK"; then
   for PART in $(lsblk -ln -o NAME,MOUNTPOINT "$INSTALL_DISK" | awk '$2 != "" {print $1}'); do
     echo "Unmounting /dev/$PART"
     umount "/dev/$PART" || echo "Failed to unmount /dev/$PART"
+    sleep 1
   done
   echo "=> All partitions unmounted"
+  sleep 1
 else
   echo "No mounted partitions found on $INSTALL_DISK"
+  sleep 1
 fi
 
 
