@@ -43,7 +43,6 @@ target_disk() {
     read -rp "Do you want to select the disk again, "Nn" will exit the installer? (Y/n): " action
     if [[ "$action" =~ ^([yY])$ ]]; then
       target_disk
-      fi
     else
       echo "Aborting installation."
       exit 1
