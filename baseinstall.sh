@@ -58,13 +58,26 @@ target_disk
 
 # 2. Check for mounted partitions and unmount them
 display_header
+#if mount | grep "$INSTALL_DISK"; then
+#  echo "=> Unmounting mounted partitions on $INSTALL_DISK"
+#  sleep 1.5
+#  for PART in $(lsblk -ln -o NAME,MOUNTPOINT "$INSTALL_DISK" | awk '$2 != "" {print $1}'); do
+#    umount "/dev/$PART"
+#  done
+#fi
 if mount | grep "$INSTALL_DISK"; then
   echo "=> Unmounting mounted partitions on $INSTALL_DISK"
   sleep 1.5
   for PART in $(lsblk -ln -o NAME,MOUNTPOINT "$INSTALL_DISK" | awk '$2 != "" {print $1}'); do
-    umount "/dev/$PART"
+    echo "Unmounting /dev/$PART"
+    umount "/dev/$PART" || echo "Failed to unmount /dev/$PART"
   done
+  echo "=> All partitions unmounted"
+else
+  echo "No mounted partitions found on $INSTALL_DISK"
 fi
+
+
 
 # 4. Check for existing partitions and prompt for confirmation to overwrite
 if lsblk "$INSTALL_DISK" | grep -q part; then
@@ -75,6 +88,7 @@ if lsblk "$INSTALL_DISK" | grep -q part; then
     echo "=> Removing existing partitions on $INSTALL_DISK"
     sgdisk --zap-all "$INSTALL_DISK"
     partprobe "$INSTALL_DISK"
+    echo "=> Existing partitions removed"
   else
     echo "Aborting installation."
     exit 1
