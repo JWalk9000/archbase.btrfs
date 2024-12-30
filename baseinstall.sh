@@ -73,14 +73,7 @@ if lsblk "$INSTALL_DISK" | grep -q part; then
   read -rp "Do you want to overwrite the existing partitions? This will delete all data on the disk. (y/N): " OVERWRITE_CONFIRMATION
   if [[ "$OVERWRITE_CONFIRMATION" =~ ^([yY][eE][sS]|[yY])$ ]]; then
     echo "=> Removing existing partitions on $INSTALL_DISK"
-    for PART in $(lsblk -ln -o NAME "$INSTALL_DISK" | grep -E "^${INSTALL_DISK#/dev/}p?[0-9]+$"); do
-      wipefs -a "/dev/$PART" || true
-    done
-    echo "=> Deleting existing partitions on $INSTALL_DISK"
-    for PART in $(lsblk -ln -o NAME "$INSTALL_DISK" | grep -E "^${INSTALL_DISK#/dev/}p?[0-9]+$"); do
-      echo "d" | fdisk "$INSTALL_DISK"
-    done
-    echo "w" | fdisk "$INSTALL_DISK"
+    sgdisk --zap-all "$INSTALL_DISK"
     partprobe "$INSTALL_DISK"
   else
     echo "Aborting installation."
