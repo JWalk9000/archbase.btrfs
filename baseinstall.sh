@@ -78,7 +78,8 @@ if mount | grep "$INSTALL_DISK"; then
   sleep 1
 else
   echo "No mounted partitions found on $INSTALL_DISK"
-  sl
+  sleep 1
+fi
 
 
 
