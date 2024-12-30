@@ -179,3 +179,4 @@ umount -R /mnt
 display_header
 read -rp "Remove the boot media and press [Enter] to reboot..."
 reboot
+
