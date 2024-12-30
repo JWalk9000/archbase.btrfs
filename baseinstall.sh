@@ -79,7 +79,7 @@ fi
 
 
 # 4. Check for existing partitions and prompt for confirmation to overwrite
-if lsblk -ln -o PARTN "$INSTALL_DISK" ; then
+if lsblk -ln -o NAME "$INSTALL_DISK" | grep -E "^${INSTALL_DISK#/dev/}[0-9]+"; then
   display_header
   echo "Warning: Existing partitions found on $INSTALL_DISK."
   read -rp "Do you want to overwrite the existing partitions? This will delete all data on the disk. (y/N): " OVERWRITE_CONFIRMATION
