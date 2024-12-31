@@ -66,7 +66,6 @@ if mount | grep "$INSTALL_DISK"; then
   for MOUNT_POINT in $(lsblk -ln -o MOUNTPOINT "$INSTALL_DISK" | grep -v '^$'); do
     echo "Unmounting $MOUNT_POINT"
     umount -R "$MOUNT_POINT" || echo "Failed to unmount $MOUNT_POINT"
-    partprobe "$INSTALL_DISK" || echo "Failed to partprobe $INSTALL_DISK"
     sleep 1
   done
   echo "=> All mount points unmounted"
