@@ -59,11 +59,11 @@ target_disk
 # 2. Check for mounted partitions and unmount them
 display_header
 echo "=> Checking for mounted partitions on $INSTALL_DISK"
-sleep 1.5
+sleep 1
 if mount | grep "$INSTALL_DISK"; then
   echo "=> Unmounting mounted partitions on $INSTALL_DISK"
-  sleep 1.5
-  for MOUNT_POINT in $(lsblk -ln -o MOUNTPOINT "$INSTALL_DISK" | grep -v '^$'); do
+  sleep 1
+  for MOUNT_POINT in $(lsblk -ln -o MOUNTPOINT "$INSTALL_DISK" | grep -v '^$' | sort -r); do
     echo "Unmounting $MOUNT_POINT"
     umount -R "$MOUNT_POINT" || echo "Failed to unmount $MOUNT_POINT"
     sleep 1
@@ -77,12 +77,12 @@ fi
 
 # 3. Ensure partitions are unmounted and reload partition table
 echo "=> Ensuring all partitions are unmounted and reloading partition table"
-sleep 1.5
+sleep 1
 for PART in $(lsblk -ln -o NAME "$INSTALL_DISK" | grep -E "^${INSTALL_DISK#/dev/}[0-9]+"); do
   umount "/dev/$PART" || true
 done
 partprobe "$INSTALL_DISK"
-sleep 1.5
+sleep 1
 
 
 
