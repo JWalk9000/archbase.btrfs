@@ -75,6 +75,15 @@ else
   sleep 1
 fi
 
+# 3. Ensure partitions are unmounted and reload partition table
+echo "=> Ensuring all partitions are unmounted and reloading partition table"
+sleep 1.5
+for PART in $(lsblk -ln -o NAME "$INSTALL_DISK" | grep -E "^${INSTALL_DISK#/dev/}[0-9]+"); do
+  umount "/dev/$PART" || true
+done
+partprobe "$INSTALL_DISK"
+sleep 1.5
+
 
 
 # 4. Check for existing partitions and prompt for confirmation to overwrite
