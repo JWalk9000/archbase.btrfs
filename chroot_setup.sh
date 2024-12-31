@@ -50,8 +50,14 @@ systemctl enable sshd
 
 # 3. Root password
 display_header
-echo "=> Set root password, leave blank for no root password:"
-passwd root
+read -rp "Would you like to set a root password? (y/N): " ROOT_PASS
+if [[ "$ROOT_PASS" =~ ^([yY][eE][sS]|[yY])$ ]]; then
+  echo "=> Set root password, leave blank for no root password"
+  passwd root
+else
+  echo "=> Skipping root password setup"
+  sleep 1.5
+fi
 
 # 4. Interactive new user creation
 display_header
