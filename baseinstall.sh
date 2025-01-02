@@ -182,7 +182,7 @@ sleep 1.5
 genfstab -U /mnt >> /mnt/etc/fstab
 
 # 11. Download and execute chroot_setup.sh inside the chroot environment
-arch-chroot /mnt /bin/bash -c "curl -s $RAW_GITHUB/$REPO/chroot_setup.sh | bash"
+arch-chroot /mnt /bin/bash -c "bash <(curl -s $RAW_GITHUB/$REPO/chroot_setup.sh)"
 
 # 12. Unmount and reboot
 display_header
