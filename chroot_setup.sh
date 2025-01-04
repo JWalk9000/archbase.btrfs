@@ -111,6 +111,10 @@ case "$BOOTLOADER_CHOICE" in
     echo "=> Installing rEFInd"
     sleep 1.5
     pacman -S --noconfirm refind
+    echo "=> Creating rEFInd configuration"
+    cat <<EOL > /boot/refind_linux.conf
+"Boot with defaults" "root=UUID=$(blkid -s UUID -o value $BTRFS_PART) rootflags=subvol=@ rw add_efi_memmap initrd=/boot/initramfs-linux-zen.img"
+EOL
     refind-install
     ;;
   *)
