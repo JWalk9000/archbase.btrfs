@@ -43,9 +43,10 @@ echo "$HOSTNAME" > /etc/hostname
 
 # Enable essential services
 display_header
-echo "=> Enabling NetworkManager and SSH"
+echo "=> Enabling Network and SSH"
 sleep 1
 #systemctl enable NetworkManager
+systemctl enable netctl
 systemctl enable sshd
 
 # 3. Root password
