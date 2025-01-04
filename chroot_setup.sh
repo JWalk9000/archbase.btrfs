@@ -45,7 +45,7 @@ echo "$HOSTNAME" > /etc/hostname
 display_header
 echo "=> Enabling NetworkManager and SSH"
 sleep 1
-systemctl enable NetworkManager
+#systemctl enable NetworkManager
 systemctl enable sshd
 
 # 3. Root password
