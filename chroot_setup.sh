@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 set -e
 
+
+RAW_GITHUB="https://raw.githubusercontent.com"
+REPO="jwalk9000/archbase.btrfs/main"
+
+
 # Define colors
 GREEN='\033[0;32m'
 NC='\033[0m' # No Color
@@ -169,7 +174,43 @@ EOL
 
 systemctl enable firstboot.service
 
-# 9. Exit chroot, unmount /mnt, and reboot
+# 9. Set up autologin for the first boot
+display_header
+echo "=> Setting up autologin for the first boot"
+mkdir -p /etc/systemd/system/getty@tty1.service.d
+cat <<EOL > /etc/systemd/system/getty@tty1.service.d/override.conf
+[Service]
+ExecStart=
+ExecStart=-/usr/bin/agetty --autologin $NEW_USER --noclear %I \$TERM
+EOL
+
+# 10. Create a script to disable autologin after the first boot
+cat <<'EOF' > /usr/local/bin/disable-autologin.sh
+#!/usr/bin/env bash
+rm /etc/systemd/system/getty@tty1.service.d/override.conf
+systemctl daemon-reload
+systemctl restart getty@tty1
+systemctl disable disable-autologin.service
+EOF
+chmod +x /usr/local/bin/disable-autologin.sh
+
+# 11. Create a systemd service to run the disable-autologin script after the first boot
+cat <<EOL > /etc/systemd/system/disable-autologin.service
+[Unit]
+Description=Disable autologin after the first boot
+After=multi-user.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/disable-autologin.sh
+
+[Install]
+WantedBy=multi-user.target
+EOL
+
+systemctl enable disable-autologin.service
+
+# 12. Exit chroot, unmount /mnt, and reboot
 display_header
 echo "========================================================="
 echo "Base system installation complete."
