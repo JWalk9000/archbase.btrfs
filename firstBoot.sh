@@ -25,11 +25,19 @@ EOF
   echo -e "${NC}"
 }
 
-# 1. GUI installation
-declare -A gui_options=(
-  ["ML4W Hyperland-Full"]="bash <(curl -s https://raw.githubusercontent.com/mylinuxforwork/dotfiles/main/setup-arch.sh)"
-  ["ML4W Hyperland-Starter"]="bash <(curl -s https://raw.githubusercontent.com/mylinuxforwork/hyprland-starter/main/setup.sh)"
-)
+# Ensure jq is installed
+pacman -S --noconfirm jq
+
+# Read GUI options from JSON file
+GUI_OPTIONS_JSON="/path/to/gui_options.json"
+declare -A gui_options
+
+while IFS= read -r line; do
+  name=$(echo "$line" | jq -r '.name')
+  repo=$(echo "$line" | jq -r '.repo')
+  installer=$(echo "$line" | jq -r '.installer')
+  gui_options["$name"]="$repo $installer"
+done < <(jq -c '.[]' "$GUI_OPTIONS_JSON")
 
 echo "=> Choose an optional GUI to install:"
 select gui_choice in "${!gui_options[@]}" "None"; do
@@ -41,28 +49,18 @@ select gui_choice in "${!gui_options[@]}" "None"; do
     echo "=> Skipping GUI installation."
     break
   elif [[ -n "${gui_options[$gui_choice]}" ]]; then
+    repo=$(echo "${gui_options[$gui_choice]}" | awk '{print $1}')
+    installer=$(echo "${gui_options[$gui_choice]}" | awk '{print $2}')
     bash <(curl -s "$RAW_GITHUB/$REPO/install_yay.sh")
     echo "=> Installing $gui_choice"
-    eval "${gui_options[$gui_choice]}"
+    git clone "$repo" /tmp/gui_repo
+    bash /tmp/gui_repo/"$installer"
     break
   else
-    echo "Invalid choice. Please try again."
+    echo "Invalid option. Please try again."
   fi
 done
 
-# 8. Final instructions
-echo "=> Done with post-install setup."
-echo "=> You can now exit chroot, unmount, and reboot."
-echo "=> (Optional) After reboot, install additional packages or run any custom scripts:"
-echo "   bash <(curl -s 'https://YOUR_RAW_GITHUB_URL/custom_script.sh')"
-
-# 9. Reboot option
-read -rp "Reboot now? (y/N): " REBOOT_CHOICE
-if [[ "$REBOOT_CHOICE" =~ ^([yY][eE][sS]|[yY])$ ]]; then
-  echo "=> Exiting chroot, unmounting /mnt, and rebooting..."
-  exit
-  umount -R /mnt
-  reboot
-else
-  echo "=> Reboot skipped. You can reboot manually later."
-fi
+# Final steps
+echo "=> First boot setup complete. Rebooting..."
+reboot

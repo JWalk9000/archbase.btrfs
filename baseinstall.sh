@@ -15,11 +15,17 @@ display_header() {
   clear
   echo -e "${GREEN}"
   cat <<"EOF"
-   ____         __       ____       
-  /  _/__  ___ / /____ _/ / /__ ____
- _/ // _ \(_-</ __/ _ `/ / / -_) __/
-/___/_//_/___/\__/\_,_/_/_/\__/_/  
-
+   __                    _      ___    ___    ___    ___  
+   \ \ __      __  __ _ | | __ / _ \  / _ \  / _ \  / _ \ 
+    \ \\ \ /\ / / / _` || |/ /| (_) || | | || | | || | | |
+ /\_/ / \ V  V / | (_| ||   <  \__, || |_| || |_| || |_| |
+ \___/   \_/\_/   \__,_||_|\_\   /_/  \___/  \___/  \___/ 
+                                                          
+   _____              _           _  _                      
+   \_   \ _ __   ___ | |_   __ _ | || |  ___  _ __         
+    / /\/| '_ \ / __|| __| / _` || || | / _ \| '__|        
+ /\/ /_  | | | |\__ \| |_ | (_| || || ||  __/| |           
+ \____/  |_| |_||___/ \__| \__,_||_||_| \___||_|     
 
 EOF
   echo -e "${NC}"
@@ -182,7 +188,7 @@ sleep 1.5
 genfstab -U -p /mnt >> /mnt/etc/fstab
 
 # 11. Download and execute chroot_setup.sh inside the chroot environment
-arch-chroot /mnt /bin/bash -c "bash <(curl -s $RAW_GITHUB/$REPO/chroot_setup.sh)"
+arch-chroot /mnt /bin/bash -c "bash <(curl -s $RAW_GITHUB/$REPO/chrootSetup.sh)"
 
 # 12. Unmount and reboot
 display_header
