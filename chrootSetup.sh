@@ -214,7 +214,7 @@ systemctl daemon-reload
 systemctl restart getty@tty1
 systemctl disable disable-autologin.service
 EOF
-chmod +x /usr/local/bin/disable-autologin.sh
+chmod +x /home/$NEW_USER/disable-autologin.sh
 
 # 11. Create a systemd service to run the disable-autologin script after the first boot
 cat <<EOL > /etc/systemd/system/disable-autologin.service
