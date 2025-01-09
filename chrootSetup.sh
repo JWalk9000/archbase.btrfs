@@ -173,7 +173,7 @@ mkdir -p /home/$NEW_USER/firstBoot
 
 FB_FILES=(
   "firstBoot.sh"
-  "gui_options.json"
+  "gui_options.yml"
   "install_yay.sh"
   "disable-autologin.sh"
 

@@ -39,16 +39,16 @@ EOF
 # Display the header at the start
 display_header
 
-# Read GUI options from YAML file
-GUI_OPTIONS_YAML="/home/$USER/firstBoot/gui_options.yml"
+# Read GUI options from JSON file
+GUI_OPTIONS_JSON="/home/$USER/firstBoot/gui_options.json"
 declare -A gui_options
 
 while IFS= read -r line; do
-  name=$(echo "$line" | yq e '.name' -)
-  repo=$(echo "$line" | yq e '.repo' -)
-  installer=$(echo "$line" | yq e '.installer' -)
+  name=$(echo "$line" | jq -r '.name')
+  repo=$(echo "$line" | jq -r '.repo')
+  installer=$(echo "$line" | jq -r '.installer')
   gui_options["$name"]="$repo $installer"
-done < <(yq e -o=json '.[]' "$GUI_OPTIONS_YAML")
+done < <(jq -c '.[]' "$GUI_OPTIONS_JSON")
 
 # Display GUI options
 echo "Choose an optional GUI to install:"
