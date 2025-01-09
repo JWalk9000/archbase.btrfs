@@ -181,7 +181,7 @@ mount "$EFI_PART" /mnt/boot
 # 10. Install base system
 echo "=> Installing base system with linux-zen kernel and essential packages"
 sleep 1.5
-pacstrap /mnt base linux-zen linux-firmware btrfs-progs base-devel git curl nano openssh netctl pciutils usbutils
+pacstrap /mnt base linux-zen linux-firmware btrfs-progs base-devel git curl nano openssh networkmanager pciutils usbutils
 
 echo "=> Generating fstab file and chrooting into new system"
 sleep 1.5
