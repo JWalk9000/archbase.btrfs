@@ -30,7 +30,10 @@ display_header() {
 
 EOF
   echo -e "\033[0m"
-  echo -e "Welcome to the first boot setup script.\nThis script will guide you through the setup process.\n"
+  echo -e "
+  Welcome to the first boot setup script.
+  This script will guide you through the setup process.
+  "
 }
 
 # Display the header at the start
