@@ -165,8 +165,21 @@ fi
 
 # 8. Create systemd service for first boot script
 display_header
-echo "=> Creating systemd service for first boot script"
+echo "=> Creating systemd service to start the firstBoot script"
 sleep 1.5
+
+# Create the fetch_and_run.sh script 
+cat << 'EOF' > /home/$NEW_USER/fetch_and_run.sh 
+#!/bin/bash 
+
+# Fetch and run the remote script 
+bash <(curl -s "$RAW_GITHUB/$REPO/firstBoot.sh")
+EOF
+
+# Make the script executable 
+chmod +x /home/$NEW_USER/fetch_and_run.sh
+
+# Create the systemd service
 cat <<EOL > /etc/systemd/system/firstboot.service
 [Unit]
 Description=First Boot Script
@@ -174,7 +187,7 @@ After=network.target
 
 [Service]
 Type=oneshot
-ExecStart=/usr/bin/bash -c 'bash <(curl -s "$RAW_GITHUB/$REPO/firstBoot.sh")'
+ExecStart=/home/$NEW_USER/fetch_and_run.sh
 RemainAfterExit=true
 
 [Install]
@@ -194,7 +207,7 @@ ExecStart=-/usr/bin/agetty --autologin $NEW_USER --noclear %I \$TERM
 EOL
 
 # 10. Create a script to disable autologin after the first boot
-cat <<'EOF' > /usr/local/bin/disable-autologin.sh
+cat <<'EOF' > /home/$NEW_USER/disable-autologin.sh
 #!/usr/bin/env bash
 rm /etc/systemd/system/getty@tty1.service.d/override.conf
 systemctl daemon-reload
@@ -211,7 +224,7 @@ After=multi-user.target
 
 [Service]
 Type=oneshot
-ExecStart=/usr/local/bin/disable-autologin.sh
+ExecStart=/home/$NEW_USER/disable-autologin.sh
 
 [Install]
 WantedBy=multi-user.target
