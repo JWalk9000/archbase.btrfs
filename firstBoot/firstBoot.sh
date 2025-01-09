@@ -4,24 +4,31 @@ set -e
 RAW_GITHUB="https://raw.githubusercontent.com"
 REPO="jwalk9000/archbase.btrfs/main"
 
-# Ensure yq and dialog are installed
-pacman -S --noconfirm yq dialog
+# Ensure yq is installed
+pacman -S --noconfirm yq
 
 # Function to display the header.
 display_header() {
-  dialog --title "Welcome" --msgbox "\n   __                    _      ___    ___    ___    ___  
-   \ \ __      __  __ _ | | __ / _ \  / _ \  / _ \  / _ \ 
-    \ \\ \ /\ / / / _\` || |/ /| (_) || | | || | | || | | |
- /\_/ / \ V  V / | (_| ||   <  \__, || |_| || |_| || |_| |
- \___/   \_/\_/   \__,_||_|\_\   /_/  \___/  \___/  \___/ 
-                                                          
-   _____              _           _  _                      
-   \_   \ _ __   ___ | |_   __ _ | || |  ___  _ __         
-    / /\/| '_ \ / __|| __| / _\` || || | / _ \| '__|        
- /\/ /_  | | | |\__ \| |_ | (_| || || ||  __/| |           
- \____/  |_| |_||___/ \__| \__,_||_||_| \___||_|     
+  clear
+  echo -e "\033[0;32m"
+  cat <<"EOF"
 
-\nWelcome to the first boot setup script.\n\nThis script will guide you through the setup process." 20 70
+     __                     _  _      ___    ___    ___    ___  
+     \ \  __      __  __ _ | || | __ / _ \  / _ \  / _ \  / _ \ 
+      \ \ \ \ /\ / / / _` || || |/ /| (_) || | | || | | || | | |
+   /\_/ /  \ V  V / | (_| || ||   <  \__, || |_| || |_| || |_| |
+   \___/    \_/\_/   \__,_||_||_|\_\   /_/  \___/  \___/  \___/ 
+                                                          
+                       GUI Setup                              
+         _____              _           _  _                      
+         \_   \ _ __   ___ | |_   __ _ | || |  ___  _ __         
+          / /\/| '_ \ / __|| __| / _` || || | / _ \| '__|        
+       /\/ /_  | | | |\__ \| |_ | (_| || || ||  __/| |           
+       \____/  |_| |_||___/ \__| \__,_||_||_| \___||_|     
+
+EOF
+  echo -e "\033[0m"
+  echo -e "Welcome to the first boot setup script.\nThis script will guide you through the setup process.\n"
 }
 
 # Display the header at the start
@@ -38,34 +45,31 @@ while IFS= read -r line; do
   gui_options["$name"]="$repo $installer"
 done < <(yq e -o=json '.[]' "$GUI_OPTIONS_YAML")
 
-# Prepare options for dialog
-options=()
-for key in "${!gui_options[@]}"; do
-  options+=("$key" "")
-done
-options+=("None" "")
-
-# Display GUI options using dialog
-gui_choice=$(dialog --title "Choose GUI" --menu "Choose an optional GUI to install:" 15 50 8 "${options[@]}" 3>&1 1>&2 2>&3 3>&-)
-
-clear
-
-if [[ "$gui_choice" == "None" ]]; then
-  dialog --title "Install Yay" --yesno "Would you like to install Yay (AUR helper)?" 7 50
-  response=$?
-  if [[ $response -eq 0 ]]; then
+# Display GUI options
+echo "Choose an optional GUI to install:"
+PS3="Enter the number corresponding to your choice: "
+options=("${!gui_options[@]}" "None")
+select gui_choice in "${options[@]}"; do
+  if [[ "$gui_choice" == "None" ]]; then
+    read -rp "Would you like to install Yay (AUR helper)? (y/N): " INSTALL_YAY
+    if [[ "$INSTALL_YAY" =~ ^([yY][eE][sS]|[yY])$ ]]; then
+      bash <(curl -s "$RAW_GITHUB/$REPO/install_yay.sh")
+    fi
+    echo "Skipping GUI installation."
+    break
+  elif [[ -n "${gui_options[$gui_choice]}" ]]; then
+    repo=$(echo "${gui_options[$gui_choice]}" | awk '{print $1}')
+    installer=$(echo "${gui_options[$gui_choice]}" | awk '{print $2}')
     bash <(curl -s "$RAW_GITHUB/$REPO/install_yay.sh")
+    echo "Installing $gui_choice..."
+    git clone "$repo" /tmp/gui_repo
+    bash /tmp/gui_repo/"$installer"
+    break
+  else
+    echo "Invalid option. Please try again."
   fi
-  dialog --msgbox "Skipping GUI installation." 5 40
-else
-  repo=$(echo "${gui_options[$gui_choice]}" | awk '{print $1}')
-  installer=$(echo "${gui_options[$gui_choice]}" | awk '{print $2}')
-  bash <(curl -s "$RAW_GITHUB/$REPO/install_yay.sh")
-  dialog --infobox "Installing $gui_choice..." 5 40
-  git clone "$repo" /tmp/gui_repo
-  bash /tmp/gui_repo/"$installer"
-fi
+done
 
 # Final steps
-dialog --msgbox "First boot setup complete. The system will now reboot." 7 50
+echo "First boot setup complete. The system will now reboot."
 reboot
