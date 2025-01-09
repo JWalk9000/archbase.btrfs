@@ -86,7 +86,6 @@ if [[ "$SUDO_CHOICE" =~ ^([yY][eE][sS]|[yY])$ ]]; then
 fi
 
 echo "=> Set password for $NEW_USER"
-sleep 1.5
 passwd "$NEW_USER"
 
 # 5. Detect dedicated GPU
@@ -196,7 +195,7 @@ After=network.target
 
 [Service]
 Type=oneshot
-ExecStart=/usr/bin/bash /home/$NEW_USER/firstBoot/firstboot.sh
+ExecStart=/usr/bin/bash /home/$NEW_USER/firstBoot/firstBoot.sh
 RemainAfterExit=true
 
 [Install]
