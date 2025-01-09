@@ -185,6 +185,9 @@ for FILE in "${FB_FILES[@]}"; do
   chmod +x /home/$NEW_USER/firstBoot/$FILE
 done
 
+# Change ownership to the new user
+chown -R $NEW_USER:$NEW_USER /home/$NEW_USER/firstBoot
+
 # Create the systemd service
 cat <<EOL > /etc/systemd/system/firstboot.service
 [Unit]
@@ -193,7 +196,7 @@ After=network.target
 
 [Service]
 Type=oneshot
-ExecStart=/home/$NEW_USER/firstBoot/firstboot.sh
+ExecStart=/usr/bin/bash /home/$NEW_USER/firstBoot/firstboot.sh
 RemainAfterExit=true
 
 [Install]
