@@ -163,21 +163,27 @@ else
   sleep 1.5
 fi
 
-# 8. Create systemd service for first boot script
+# 8. Setup firstBoot experience
 display_header
-echo "=> Creating systemd service to start the firstBoot script"
+echo "=> Preparing to install a Desktop Environment on the first boot"
 sleep 1.5
 
-# Create the fetch_and_run.sh script 
-cat << 'EOF' > /home/$NEW_USER/fetch_and_run.sh 
-#!/bin/bash 
+mkdir -p /home/$NEW_USER/firstBoot
 
-# Fetch and run the remote script 
-bash <(curl -s "$RAW_GITHUB/$REPO/firstBoot.sh")
-EOF
+FB_FILES=(
+  "firstBoot.sh"
+  "gui_options.json"
+  "install_yay.sh"
+  "disable-autologin.sh"
 
-# Make the script executable 
-chmod +x /home/$NEW_USER/fetch_and_run.sh
+)
+for FILE in "${FB_FILES[@]}"; do
+  curl -s -o /home/$NEW_USER/firstBoot/$FILE "$RAW_GITHUB/$REPO/firstBoot/$FILE"
+done
+
+for FILE in "${FB_FILES[@]}"; do
+  chmod +x /home/$NEW_USER/firstBoot/$FILE
+done
 
 # Create the systemd service
 cat <<EOL > /etc/systemd/system/firstboot.service
@@ -187,7 +193,7 @@ After=network.target
 
 [Service]
 Type=oneshot
-ExecStart=/home/$NEW_USER/fetch_and_run.sh
+ExecStart=/home/$NEW_USER/firstBoot/firstboot.sh
 RemainAfterExit=true
 
 [Install]
@@ -206,41 +212,10 @@ ExecStart=
 ExecStart=-/usr/bin/agetty --autologin $NEW_USER --noclear %I \$TERM
 EOL
 
-# 10. Create a script to disable autologin after the first boot
-cat <<'EOF' > /home/$NEW_USER/disable-autologin.sh
-#!/usr/bin/env bash
-rm /etc/systemd/system/getty@tty1.service.d/override.conf
 systemctl daemon-reload
-systemctl restart getty@tty1
-systemctl disable disable-autologin.service
-EOF
-chmod +x /home/$NEW_USER/disable-autologin.sh
-
-# 11. Create a systemd service to run the disable-autologin script after the first boot
-cat <<EOL > /etc/systemd/system/disable-autologin.service
-[Unit]
-Description=Disable autologin after the first boot
-After=multi-user.target
-
-[Service]
-Type=oneshot
-ExecStart=/home/$NEW_USER/disable-autologin.sh
-
-[Install]
-WantedBy=multi-user.target
-EOL
-
-systemctl enable disable-autologin.service
 
 # 12. Exit chroot, unmount /mnt, and reboot
 display_header
-echo "========================================================="
-echo "Base system installation complete."
-echo "Next steps:"
-echo "  1) Reboot into the new system."
-echo "  2) The post-install script will run automatically on the first boot."
-echo "========================================================="
-
 echo "=> Exiting chroot environment"
 sleep 1.5
 exit

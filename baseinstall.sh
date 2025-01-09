@@ -197,6 +197,14 @@ sleep 1.5
 umount -R /mnt
 
 display_header
-read -rp "Remove the boot media and press [Enter] to reboot..."
+echo "========================================================================"
+echo "                 Base system installation complete."
+echo "                           Next steps:"
+echo " "
+echo "                    1) Reboot into the new system."
+echo "  2) The post-install script will run automatically on the first boot."
+echo "========================================================================"
+
+read -rp "Please remove the boot media and press [Enter] to reboot..."
 reboot
 
