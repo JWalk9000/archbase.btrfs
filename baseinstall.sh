@@ -93,18 +93,35 @@ sleep 1
 
 
 # 4. Check for existing partitions and prompt for confirmation to overwrite
-if lsblk -ln -o NAME "$INSTALL_DISK" | grep -E "^${INSTALL_DISK#/dev/}[0-9]+"; then
-  display_header
-  echo "Warning: Existing partitions found on $INSTALL_DISK."
-  read -rp "Do you want to overwrite the existing partitions? This will delete all data on the disk. (y/N): " OVERWRITE_CONFIRMATION
-  if [[ "$OVERWRITE_CONFIRMATION" =~ ^([yY][eE][sS]|[yY])$ ]]; then
-    echo "=> Removing existing partitions on $INSTALL_DISK"
-    sgdisk --zap-all "$INSTALL_DISK"
-    partprobe "$INSTALL_DISK"
-    echo "=> Existing partitions removed"
-  else
-    echo "Aborting installation."
-    exit 1
+if [[ "$INSTALL_DISK" == *"nvme"* ]]; then
+  if lsblk -ln -o NAME "$INSTALL_DISK" | grep -E "^${INSTALL_DISK#/dev/}p[0-9]+"; then
+    display_header
+    echo "Warning: Existing partitions found on $INSTALL_DISK."
+    read -rp "Do you want to overwrite the existing partitions? This will delete all data on the disk. (y/N): " OVERWRITE_CONFIRMATION
+    if [[ "$OVERWRITE_CONFIRMATION" =~ ^([yY][eE][sS]|[yY])$ ]]; then
+      echo "=> Removing existing partitions on $INSTALL_DISK"
+      sgdisk --zap-all "$INSTALL_DISK"
+      partprobe "$INSTALL_DISK"
+      echo "=> Existing partitions removed"
+    else
+      echo "Aborting installation."
+      exit 1
+    fi
+  fi
+else
+  if lsblk -ln -o NAME "$INSTALL_DISK" | grep -E "^${INSTALL_DISK#/dev/}[0-9]+"; then
+    display_header
+    echo "Warning: Existing partitions found on $INSTALL_DISK."
+    read -rp "Do you want to overwrite the existing partitions? This will delete all data on the disk. (y/N): " OVERWRITE_CONFIRMATION
+    if [[ "$OVERWRITE_CONFIRMATION" =~ ^([yY][eE][sS]|[yY])$ ]]; then
+      echo "=> Removing existing partitions on $INSTALL_DISK"
+      sgdisk --zap-all "$INSTALL_DISK"
+      partprobe "$INSTALL_DISK"
+      echo "=> Existing partitions removed"
+    else
+      echo "Aborting installation."
+      exit 1
+    fi
   fi
 fi
 
