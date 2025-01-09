@@ -4,7 +4,7 @@ set -e
 RAW_GITHUB="https://raw.githubusercontent.com"
 REPO="jwalk9000/archbase.btrfs/main"
 
-wait 15
+sleep 15
 
 # Ensure yq is installed
 pacman -S --noconfirm yq
