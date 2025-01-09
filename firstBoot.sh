@@ -29,7 +29,8 @@ EOF
 pacman -S --noconfirm jq
 
 # Read GUI options from JSON file
-GUI_OPTIONS_JSON="$RAW_GITHUB/$REPO/gui_options.json"
+curl -s -o gui_options.json "$RAW_GITHUB/$REPO/gui_options.json"
+GUI_OPTIONS_JSON="gui_options.json"
 declare -A gui_options
 
 while IFS= read -r line; do
