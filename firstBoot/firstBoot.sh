@@ -3,16 +3,22 @@ set -e
 
 RAW_GITHUB="https://raw.githubusercontent.com"
 REPO="jwalk9000/archbase.btrfs/main"
+USER="user_placeholder"
 
 sleep 15
 
 # Ensure yq is installed
-pacman -S --noconfirm yq
+pacman -S --noconfirm jq
 
-# Function to display the header.
+# Define colors
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+NC='\033[0m' # No Color
+
+# Function to display the header
 display_header() {
   clear
-  echo -e "\033[0;32m"
+  echo -e "${GREEN}"
   cat <<"EOF"
 
      __                     _  _      ___    ___    ___    ___  
@@ -29,7 +35,7 @@ display_header() {
        \____/  |_| |_||___/ \__| \__,_||_||_| \___||_|     
 
 EOF
-  echo -e "\033[0m"
+  echo -e "${NC}"
   echo -e "
   Welcome to the first boot setup script.
   This script will guide you through the setup process.

@@ -8,6 +8,7 @@ REPO="jwalk9000/archbase.btrfs/main"
 
 # Define colors
 GREEN='\033[0;32m'
+RED='\033[0;31m'
 NC='\033[0m' # No Color
 
 # Function to display the header.
@@ -29,6 +30,18 @@ display_header() {
        /\/ /_  | | | |\__ \| |_ | (_| || || ||  __/| |           
        \____/  |_| |_||___/ \__| \__,_||_||_| \___||_|     
 
+EOF
+  echo -e "${NC}"
+}
+
+# Function to display WARNING message
+display_warning() {
+  echo -e "${RED}"
+  cat <<"EOF"
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    !! WARNING: This will destroy all data on the target disk. Proceed with !!
+    !! caution. If you are unsure, press Ctrl+C to abort this script.        !!
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 EOF
   echo -e "${NC}"
 }
@@ -93,11 +106,11 @@ partprobe "$INSTALL_DISK"
 sleep 1
 
 
-
 # 4. Check for existing partitions and prompt for confirmation to overwrite
 if [[ "$INSTALL_DISK" == *"nvme"* ]]; then
   if lsblk -ln -o NAME "$INSTALL_DISK" | grep -E "^${INSTALL_DISK#/dev/}p[0-9]+"; then
     display_header
+    display_warning
     echo "Warning: Existing partitions found on $INSTALL_DISK."
     read -rp "Do you want to overwrite the existing partitions? This will delete all data on the disk. (y/N): " OVERWRITE_CONFIRMATION
     if [[ "$OVERWRITE_CONFIRMATION" =~ ^([yY][eE][sS]|[yY])$ ]]; then
@@ -113,6 +126,7 @@ if [[ "$INSTALL_DISK" == *"nvme"* ]]; then
 else
   if lsblk -ln -o NAME "$INSTALL_DISK" | grep -E "^${INSTALL_DISK#/dev/}[0-9]+"; then
     display_header
+    display_warning
     echo "Warning: Existing partitions found on $INSTALL_DISK."
     read -rp "Do you want to overwrite the existing partitions? This will delete all data on the disk. (y/N): " OVERWRITE_CONFIRMATION
     if [[ "$OVERWRITE_CONFIRMATION" =~ ^([yY][eE][sS]|[yY])$ ]]; then

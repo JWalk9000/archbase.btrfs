@@ -178,9 +178,9 @@ FB_FILES=(
   "disable-autologin.sh"
 
 )
-for FILE in "${FB_FILES[@]}"; do
-  curl -s -o /home/$NEW_USER/firstBoot/$FILE "$RAW_GITHUB/$REPO/firstBoot/$FILE"
-done
+for FILE in "${FB_FILES[@]}"; do 
+  curl -s "$RAW_GITHUB/$REPO/firstBoot/$FILE" | sed "s/user_placeholder/$NEW_USER/g" > /home/$NEW_USER/firstBoot/$FILE
+  done
 
 for FILE in "${FB_FILES[@]}"; do
   chmod +x /home/$NEW_USER/firstBoot/$FILE
