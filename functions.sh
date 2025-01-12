@@ -133,10 +133,17 @@ create_new_user() {
 
 select_locale() {
   display_header
+  info_print "=> Refreshing locale list"
+  sleep 1
+
+  # Use the locale.gen file from the install image
+  cp /etc/locale.gen /tmp/locale.gen
+
   info_print "=> Start typing to search for a locale, press Enter to select."
+  sleep 1
   
   # Read the available locales into an array
-  mapfile -t locales < <(grep -E '^[a-z]{2,}_[A-Z]{2,}' /mnt/etc/locale.gen | awk '{print $1}')
+  mapfile -t locales < <(grep -E '^[#]*[a-z]{2,}_[A-Z]{2,}' /tmp/locale.gen | sed 's/^#//' | awk '{print $1}')
   
   # Use fzf to select a locale
   selected_locale=$(printf "%s\n" "${locales[@]}" | fzf --prompt="Search: " --header="Locales available:")
