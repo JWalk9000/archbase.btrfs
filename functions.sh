@@ -86,7 +86,7 @@ set_root_password() {
       break
     else
       warning_print "Passwords do not match. Please try again."
-      sleep 1
+      sleep 2
       return 1
     fi
   done
@@ -97,6 +97,10 @@ create_new_user() {
   display_header
   read -rp "$(info_print "Enter new username (must be all lowercase):")" NEW_USER
   echo ""
+  if [[ -z "$NEW_USER" ]]; then
+    warning_print "You need to enter a username, please try again."
+    return 1
+  fi
   read -rp "$(yN_print "Should $NEW_USER have sudo privileges?")" SUDO_CHOICE
   echo ""
   if [[ "$SUDO_CHOICE" =~ ^([yY][eE][sS]|[yY])$ ]]; then
