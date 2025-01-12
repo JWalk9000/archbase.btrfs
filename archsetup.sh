@@ -53,14 +53,14 @@ until set_root_password; do : ; done
 # Create a new user
 until create_new_user; do : ; done
 
-# Choose a kernel to install
-until choose_kernel; do : ; done
-
 # Select locale
 until select_locale; do : ; done
 
 # Select timezone
 until select_timezone; do : ; done
+
+# Choose a kernel to install
+until choose_kernel; do : ; done
 
 # Detect and install microcode
 until microcode_detector; do : ; done
@@ -148,11 +148,11 @@ sleep 1
 mkdir -p /mnt/boot
 mount "$EFI_PART" /mnt/boot
 
-# Install the base system
+# Install the base system and user-selected packages
 install_message
 info_print "=> Installing base system with $KERNEL_PKG and essential packages"
 sleep 1
-pacstrap /mnt base $KERNEL_PKG $MICROCODE linux-firmware btrfs-progs base-devel git curl nano openssh networkmanager pciutils usbutils
+pacstrap /mnt base $KERNEL_PKG $MICROCODE linux-firmware btrfs-progs base-devel git curl nano openssh networkmanager pciutils usbutils $USERPKGS
 
 # Generate the fstab file
 install_message
@@ -198,6 +198,7 @@ case "$BOOTLOADER" in
   "rEFInd")
     pacman -S --noconfirm refind
     refind-install
+    mkrlconf --root /mnt --subvol @ --output /mnt/boot/refind_linux.conf
     ;;
   *)
     pacman -S --noconfirm grub

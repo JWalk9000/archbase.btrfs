@@ -38,6 +38,16 @@ choices_print() {
   echo -e "${INPUT}$1${INFO}$2${RESET}"
 }
 
+# select a choice from a list
+select_print() {
+  local range1=$1
+  local range2=$2
+  local message=$3
+  local choice=$4
+  echo -e "${INFO}${message}[${INPUT}${range1}${INFO}-${INPUT}${range2}${INFO}]: ${RESET}"
+  read -rp "" $choice
+}
+
 #  Display a Message with Y/N options
 Yn_print() {
   echo -e "${INFO}$1(${INPUT}Y${INFO}/${INPUT}n${INFO}): ${RESET}"

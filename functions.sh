@@ -131,34 +131,6 @@ create_new_user() {
   done
 }
 
-# Choose a kernel to install (function).
-choose_kernel() {
-  display_header
-  info_print "=> Choose a kernel to install:"
-  choices_print "1" ") linux: (default) Vanilla kernel, with Arch Linux patches."
-  choices_print "2" ") linux-lts: Long-term Support kernel."
-  choices_print "3" ") linux-zen: Kernel with the desktop optimizations."
-  choices_print "4" ") linux-hardened: a Security-focused kernel."
-  read -rp "$(echo -e ${INFO}Kernel choice [1-4]: ${reset})" KERNEL_CHOICE
-  case $KERNEL_CHOICE in
-    1)
-      KERNEL_PKG="linux"
-      return 0;;
-    2)
-      KERNEL_PKG="linux-lts"
-      return 0;;
-    3)
-      KERNEL_PKG="linux-zen"
-      return 0;;
-    4)
-      KERNEL_PKG="linux-hardened"
-      return 0;;
-    *)
-      KERNEL_PKG="linux"
-      return 0;;
-  esac
-}
-
 select_locale() {
   display_header
   info_print "=> Start typing to search for a locale, press Enter to select."
@@ -196,6 +168,116 @@ select_timezone() {
     echo "No timezone selected."
   fi
 }
+
+# Choose a kernel to install (function).
+choose_kernel() {
+  display_header
+  info_print "=> Choose a kernel to install:"
+  choices_print "1" ") linux: (default) Vanilla kernel, with Arch Linux patches."
+  choices_print "2" ") linux-lts: Long-term Support kernel."
+  choices_print "3" ") linux-zen: Kernel with the desktop optimizations."
+  choices_print "4" ") linux-hardened: a Security-focused kernel."
+  select_print "1" "4" "Kernel choice" KERNEL_CHOICE
+  case $KERNEL_CHOICE in
+    1)
+      KERNEL_PKG="linux"
+      return 0;;
+    2)
+      KERNEL_PKG="linux-lts"
+      return 0;;
+    3)
+      KERNEL_PKG="linux-zen"
+      return 0;;
+    4)
+      KERNEL_PKG="linux-hardened"
+      return 0;;
+    *)
+      KERNEL_PKG="linux"
+      return 0;;
+  esac
+}
+
+# Install user-specified packages (function).
+user_packages() {
+  display_header
+  info_print "By default, in addition to the base system this installer will also install the following packages:
+  - networkmanager
+  - nano
+  - git
+  - openssh
+  - pciutils
+  - usbutils
+  " 
+  Yn_print "Did you create a userpkgs.txt file with optional packages to install?"
+  read -rp "" USERPKGS_FILE
+  if [[ "$USERPKGS_FILE" =~ ^([yY][eE][sS]|[yY])$ ]]; then
+    while true; do
+      info_print "=> Checking for userpkgs.txt at $RAW_GITHUB/$REPO/userpkgs.txt"
+      sleep 1
+      if curl --output /dev/null --silent --head --fail "$RAW_GITHUB/$REPO/userpkgs.txt"; then
+        info_print "=> User's packages list will be installed to the system."
+        USERPKGS=$(curl -s "$RAW_GITHUB/$REPO/userpkgs.txt")
+        break
+      else
+        warning_print "No userpkgs.txt file found at $RAW_GITHUB/$REPO/userpkgs.txt."
+        Yn_print "Would you like to try again? Check the file name and location before proceeding."
+        read -rp "" TRY_AGAIN
+        if [[ "$TRY_AGAIN" =~ ^([nN][oO]?|[nN])$ ]]; then
+          break
+        fi
+      fi
+    done
+  fi
+
+  if [[ -z "$USERPKGS" ]]; then
+    Yn_print "Would you like to enter the packages manually as a space-separated list?"
+    read -rp "" ENTER_MANUALLY
+    if [[ "$ENTER_MANUALLY" =~ ^([yY][eE][sS]|[yY])$ ]]; then
+      while true; do
+        info_print "Enter the packages you would like to install, separated by a space:"
+        read -rp "" USERPKGS
+        info_print "I will now check that those packages are available to install."
+        sleep 1
+        VERIFIED_PKGS=""
+        for PKG in $USERPKGS; do
+          if ! pacman -Si "$PKG" > /dev/null; then
+            warning_print "Package $PKG not found in the repositories."
+            Yn_print "Would you like to change the spelling?"
+            read -rp "" CHANGE_SPELLING
+            if [[ "$CHANGE_SPELLING" =~ ^([yY][eE][sS]|[yY])$ ]]; then
+              read -rp "Enter the correct package name: " FIXPKG
+              if pacman -Si "$FIXPKG" > /dev/null; then
+                VERIFIED_PKGS="$VERIFIED_PKGS $FIXPKG"
+              else
+                warning_print "Package $FIXPKG not found in the repositories."
+                Yn_print "Would you like to try again?"
+                read -rp "" TRY_AGAIN
+                if [[ "$TRY_AGAIN" =~ ^([yY][eE][sS]|[yY])$ ]]; then
+                  continue
+                else
+                  break
+                fi
+              fi
+            else
+              continue
+            fi
+          else
+            VERIFIED_PKGS="$VERIFIED_PKGS $PKG"
+          fi
+        done
+        USERPKGS=$VERIFIED_PKGS
+        break
+      done
+    fi
+  fi
+
+  if [[ -n "$USERPKGS" ]]; then
+    info_print "The following packages will be installed: $USERPKGS"
+  else
+    warning_print "No packages to install."
+  fi
+}
+
 
 # Microcode detector (function).
 microcode_detector () {
@@ -238,11 +320,11 @@ gpu_drivers() {
 # Choose a bootloader to install (function).
 choose_bootloader() {
   display_header
-  echo "=> Choose a bootloader to install:"
+  indo_print "=> Choose a bootloader to install:"
   sleep 1.5
-  echo "   1) GRUB"
-  echo "   2) systemd-boot"
-  echo "   3) rEFInd"
+  choices_print "   1)"" GRUB"
+  choices_print "   2)"" systemd-boot"
+  choices_print "   3)"" rEFInd"
   read -rp "Enter your choice (1-3, default is 1): " BOOTLOADER_CHOICE
   case "$BOOTLOADER_CHOICE" in
     2)
