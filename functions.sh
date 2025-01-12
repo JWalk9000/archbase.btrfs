@@ -101,7 +101,7 @@ create_new_user() {
     warning_print "You need to enter a username, please try again."
     return 1
   fi
-  read -rp "$(yN_print "Should $NEW_USER have sudo privileges?")" SUDO_CHOICE
+  read -rp "$(yN_print "Should ${NEW_USER} have sudo privileges?")" SUDO_CHOICE
   echo ""
   if [[ "$SUDO_CHOICE" =~ ^([yY][eE][sS]|[yY])$ ]]; then
     SUDO_GROUP="-G wheel "
@@ -110,9 +110,12 @@ create_new_user() {
   fi
 
   while true; do
-    read -s -rp "$(info_print "Enter password for $NEW_USER: ")" USER_PASS1
+    read -s -rp "$(info_print "Enter password for ${NEW_USER}: ")" USER_PASS1
     echo ""
-    info_print 
+    if [[ -z "$USER_PASS1" ]]; then
+      warning_print "You need to enter a password for the new user, please try again."
+      return 1
+    fi
     read -s -rp "$(info_print "Confirm password for $NEW_USER: ")" USER_PASS2
     echo ""
     if [ "$USER_PASS1" == "$USER_PASS2" ]; then
@@ -120,7 +123,7 @@ create_new_user() {
       break
     else
       warning_print "Passwords do not match. Please try again."
-      sleep 1.5
+      sleep 2
       return 1
     fi
   done
