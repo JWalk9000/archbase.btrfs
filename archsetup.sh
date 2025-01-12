@@ -156,6 +156,9 @@ install_message
 info_print "=> Installing base system with $KERNEL_PKG and essential packages"
 sleep 1
 pacstrap /mnt base $KERNEL_PKG $MICROCODE linux-firmware btrfs-progs base-devel git curl nano openssh networkmanager pciutils usbutils $USERPKGS
+if $user_packages; then
+  pacstrap /mnt $USERPKGS
+fi
 
 # Generate the fstab file
 install_message
