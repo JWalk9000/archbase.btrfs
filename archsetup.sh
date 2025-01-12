@@ -87,34 +87,56 @@ until erase_partitions; do : ; done
 install_message
 
 # Partition the disk
-(
-echo g # Create a new empty GPT partition table
-echo n # Add a new partition
-echo 1 # Partition number
-echo   # First sector (Accept default: 1MiB)
-echo +512M # Last sector (Accept default: varies)
-echo t # Change partition type
-echo 1 # EFI System
-echo n # Add a new partition
-echo 2 # Partition number
-echo   # First sector (Accept default: varies)
-echo   # Last sector (Accept default: varies)
-echo w # Write changes
-) | fdisk "$INSTALL_DISK"
-partprobe "$INSTALL_DISK"
+if [ -d /sys/firmware/efi/efivars ]; then
+  (
+  echo g # Create a new empty GPT partition table
+  echo n # Add a new partition
+  echo 1 # Partition number
+  echo   # First sector (Accept default: 1MiB)
+  echo +512M # Last sector (Accept default: varies)
+  echo t # Change partition type
+  echo 1 # EFI System
+  echo n # Add a new partition
+  echo 2 # Partition number
+  echo   # First sector (Accept default: varies)
+  echo   # Last sector (Accept default: varies)
+  echo w # Write changes
+  ) | fdisk "$INSTALL_DISK"
+  partprobe "$INSTALL_DISK"
 
-# Format the partitions
-if [[ "$INSTALL_DISK" == *"nvme"* ]]; then
-  EFI_PART="${INSTALL_DISK}p1"
-  BTRFS_PART="${INSTALL_DISK}p2"
+  # Format the partitions
+  if [[ "$INSTALL_DISK" == *"nvme"* ]]; then
+    EFI_PART="${INSTALL_DISK}p1"
+    BTRFS_PART="${INSTALL_DISK}p2"
+  else
+    EFI_PART="${INSTALL_DISK}1"
+    BTRFS_PART="${INSTALL_DISK}2"
+  fi
+
+  info_print "=> Formatting EFI partition as FAT32"
+  sleep 1
+  mkfs.fat -F 32 "$EFI_PART"
 else
-  EFI_PART="${INSTALL_DISK}1"
-  BTRFS_PART="${INSTALL_DISK}2"
-fi
+  (
+  echo o # Create a new empty DOS partition table
+  echo n # Add a new partition
+  echo p # Primary partition
+  echo 1 # Partition number
+  echo   # First sector (Accept default: 1MiB)
+  echo   # Last sector (Accept default: varies)
+  echo a # Make partition bootable
+  echo 1 # Partition number
+  echo w # Write changes
+  ) | fdisk "$INSTALL_DISK"
+  partprobe "$INSTALL_DISK"
 
-info_print "=> Formatting EFI partition as FAT32"
-sleep 1
-mkfs.fat -F 32 "$EFI_PART"
+  # Format the partitions
+  if [[ "$INSTALL_DISK" == *"nvme"* ]]; then
+    BTRFS_PART="${INSTALL_DISK}p1"
+  else
+    BTRFS_PART="${INSTALL_DISK}1"
+  fi
+fi
 
 info_print "=> Formatting primary partition as Btrfs"
 sleep 1

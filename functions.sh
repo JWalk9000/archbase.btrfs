@@ -355,22 +355,28 @@ gpu_drivers() {
 # Choose a bootloader to install (function).
 choose_bootloader() {
   display_header
-  info_print "=> Choose a bootloader to install:"
-  choices_print " * 1)"" GRUB"
-  choices_print "   2)"" systemd-boot"
-  choices_print "   3)"" rEFInd"
-  select_print "1" "3" "Bootloader" "BOOTLOADER_CHOICE"
-  case "$BOOTLOADER_CHOICE" in
-    2)
-      BOOTLOADER="systemd-boot"
-      ;;
-    3)
-      BOOTLOADER="rEFInd"
-      ;;
-    *)
-      BOOTLOADER="grub"
-      ;;
-  esac
+  if [ -d /sys/firmware/efi/efivars ]; then
+    info_print "=> EFI system detected. Choose a bootloader to install:"
+    choices_print " * 1)"" GRUB"
+    choices_print "   2)"" systemd-boot"
+    choices_print "   3)"" rEFInd"
+    select_print "1" "3" "Bootloader" "BOOTLOADER_CHOICE"
+    case "$BOOTLOADER_CHOICE" in
+      2)
+        BOOTLOADER="systemd-boot"
+        ;;
+      3)
+        BOOTLOADER="rEFInd"
+        ;;
+      *)
+        BOOTLOADER="grub"
+        ;;
+    esac
+  else
+    info_print "=> BIOS system detected. GRUB bootloader will be installed:"
+    sleep 2
+    BOOTLOADER="grub"
+  fi
 }
 
 # List block devices and prompt user for target install disk (function).

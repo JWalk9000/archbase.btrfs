@@ -37,34 +37,21 @@ echo "   2) systemd-boot"
 echo "   3) rEFInd"
 read -rp "Enter your choice (1-3, default is 1): " BOOTLOADER_CHOICE
 
-case "$BOOTLOADER_CHOICE" in
-  2)
-    echo "=> Installing systemd-boot"
-    sleep 1.5
+case "$BOOTLOADER" in
+  systemd-boot)
     bootctl --path=/boot install
     ;;
-  3)
-    echo "=> Installing rEFInd"
-    sleep 1.5
+  rEFInd)
     pacman -S --noconfirm refind
-    echo "=> Creating rEFInd configuration"
-    cat <<EOL > /boot/refind_linux.conf
-"Boot with defaults" "root=UUID=$(blkid -s UUID -o value $BTRFS_PART) rootflags=subvol=@ rw add_efi_memmap initrd=/boot/initramfs-linux-zen.img"
-EOL
     refind-install
+    mkrlconf --root /mnt --subvol @ --output /mnt/boot/refind_linux.conf
     ;;
   *)
-    echo "=> Installing GRUB (default)"
-    sleep 1.5
     pacman -S --noconfirm grub
     if [ -d /sys/firmware/efi ]; then
-      echo "=> Detected EFI system"
-      sleep 1.5
       pacman -S --noconfirm efibootmgr
       grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB
     else
-      echo "=> Detected BIOS/MBR system"
-      sleep 1.5
       grub-install --target=i386-pc /dev/sda
     fi
     grub-mkconfig -o /boot/grub/grub.cfg
