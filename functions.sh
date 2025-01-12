@@ -306,16 +306,44 @@ gpu_drivers() {
   display_header
   info_print "=> Checking for a dedicated GPU"
   sleep 1
-  if lspci | grep -i -E "VGA compatible controller|3D controller"; then
+
+  # Check for NVIDIA GPU
+  if lspci | grep -i "NVIDIA" | grep -i "VGA compatible controller"; then
     display_header
-    yN_print "Dedicated GPU detected. Would you like to install GPU drivers?"
-    read -rp INSTALL_GPU
+    yN_print "NVIDIA GPU detected. Would you like to install NVIDIA drivers?"
+    read -rp "" INSTALL_GPU
     if [[ "$INSTALL_GPU" =~ ^([yY][eE][sS]|[yY])$ ]]; then
-      info_print "=> Installing GPU drivers (this may take a while)"
+      info_print "=> Installing NVIDIA drivers (this may take a while)"
       sleep 1
-      INSTALL_GPU_DRIVERS=true
+      INSTALL_GPU_DRIVERS="nvidia nvidia-utils"
     else
-      info_print "=> Skipping GPU driver installation"
+      info_print "=> Skipping NVIDIA driver installation"
+      sleep 1
+    fi
+  # Check for AMD GPU
+  elif lspci | grep -i "AMD/ATI" | grep -i "VGA compatible controller"; then
+    display_header
+    yN_print "AMD GPU detected. Would you like to install AMD drivers?"
+    read -rp "" INSTALL_GPU
+    if [[ "$INSTALL_GPU" =~ ^([yY][eE][sS]|[yY])$ ]]; then
+      info_print "=> Installing AMD drivers (this may take a while)"
+      sleep 1
+      INSTALL_GPU_DRIVERS="xf86-video-amdgpu"
+    else
+      info_print "=> Skipping AMD driver installation"
+      sleep 1
+    fi
+  # Check for Intel GPU
+  elif lspci | grep -i "Intel Corporation" | grep -i "VGA compatible controller"; then
+    display_header
+    yN_print "Intel GPU detected. Would you like to install Intel drivers?"
+    read -rp "" INSTALL_GPU
+    if [[ "$INSTALL_GPU" =~ ^([yY][eE][sS]|[yY])$ ]]; then
+      info_print "=> Installing Intel drivers (this may take a while)"
+      sleep 1
+      INSTALL_GPU_DRIVERS="xf86-video-intel"
+    else
+      info_print "=> Skipping Intel driver installation"
       sleep 1
     fi
   else
