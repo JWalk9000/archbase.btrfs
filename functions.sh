@@ -33,27 +33,26 @@ EOF
 greet_user() {
   echo -e "${INFO}"
   cat << EOL
-  "Welcome to my Arch Linux Base installation script.
+  Welcome to my Arch Linux Base installation script.
   This script will streamline the installation process, creating a minimal Arch Linux system.
   
-  ${WARNING}
+  $(${WARNING}'
   Please be aware that this script will use the entire selected disk for the installation.
   Ensure you have backed up any important data before proceeding.
-  Please ensure you have a stable internet connection before proceeding.
+  Please ensure you have a stable internet connection before proceeding.')
 
 EOL
   echo -e "${RESET}"
-  echo -e "${INFO}Press ${INPUT}Enter${INFO} to continue...${RESET}"
-  read -rp ""
+  read -rp "$(echo -e ${INFO}Press ${INPUT}Enter${INFO} to continue...${RESET})"
 }
 
 # Display partition WARNING message (function).
 partition_warning() {
   warning_bold "
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    !! WARNING: This will destroy all data on the target disk. Proceed with  !!
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    !! WARNING: This will destroy all data on the target disk. Proceed with   !!
     !! caution. If you are unsure, answer 'N' or Ctrl+C to abort this script. !!
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   "
 }
 
