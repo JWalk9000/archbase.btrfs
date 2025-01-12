@@ -66,7 +66,7 @@ partition_warning() {
 # User selects a hostname (function).
 set_hostname() {
   display_header
-  read -rp "$(echo -e ${INFO}Enter a name 'hostname' for this computer: ${RESET})" HOSTNAME
+  read -rp "$(echo -e ${INFO}Enter a name (hostname) for this computer: ${RESET})" HOSTNAME
 }
 
 # User selects a locale (function).
