@@ -7,9 +7,21 @@ REPO="jwalk9000/archbase.btrfs/main"
 source <(curl -s $RAW_GITHUB/$REPO/functions.sh)
 source <(curl -s $RAW_GITHUB/$REPO/colors.sh)
 
+# Install script dependencies
+PKGDEPS=(
+  "jq" 
+  "fzf"
+)
+
+info_print "=> Installing script dependencies"
+for PKG in "${PKGDEPS[@]}"; do
+  if ! pacman -Qs "$PKG" > /dev/null ; then
+    pacman -S --noconfirm "$PKG"
+  fi
+done
+
 
 #list of variables
-
 KERNEL_PKG=""
 MICROCODE=""
 ROOT_PASS=""
