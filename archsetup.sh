@@ -26,7 +26,8 @@ DESKTOP=false
 display_header
 
 # Greet the user
-until greet_user; do : ; done
+greet_user
+until display_warning; do : ; done
 
 # Set hostname
 until set_hostname; do : ; done

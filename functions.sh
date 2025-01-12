@@ -36,12 +36,16 @@ greet_user() {
   "Welcome to my Arch Linux Base installation script.
   This script will streamline the installation process, creating a minimal Arch Linux system.
   
-  $(echo -e ${WARNING}
+EOL
+}
+
+# Display warning message.
+display_warning() {
+  echo -e "${WARNING}
   Please be aware that this script will use the entire selected disk for the installation.
   Ensure you have backed up any important data before proceeding.
   Please ensure you have a stable internet connection before proceeding.)"
 
-EOL
   echo -e "${RESET}"
   read -rp "$(echo -e ${INFO}Press ${INPUT}Enter${INFO} to proceed, ${INPUT}CTRL+C${INFO} to abort...${RESET})"
 }
