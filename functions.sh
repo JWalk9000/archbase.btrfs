@@ -18,7 +18,7 @@ display_header() {
    /\_/ /  \ V  V / | (_| || ||   <  \__, || |_| || |_| || |_| | 
    \___/    \_/\_/   \__,_||_||_|\_\   /_/  \___/  \___/  \___/  
                                                                  
-  ======================= ARCH LINUX BASED =====================
+  ======================= ARCH LINUX BASE ======================
          _____              _           _  _                      
          \_   \ _ __   ___ | |_   __ _ | || |  ___  _ __         
           / /\/| '_ \ / __|| __| / _` || || | / _ \| '__|        
@@ -33,8 +33,11 @@ EOF
 greet_user() {
   echo -e "${INFO}"
   cat << EOL
-  "Welcome to my Arch Linux Base installation script.
+  Welcome to my Arch Linux Base installation script.
   This script will streamline the installation process, creating a minimal Arch Linux system.
+  After entering your choices it will create a boot partition, and a system partition using Btrfs 
+  and Btrfs sudirectories for the 'home', 'root', and '.snapshots' subdirectories before 
+  installing the base system.
   
 EOL
 }
@@ -44,7 +47,7 @@ display_warning() {
   echo -e "${WARNING}
   Please be aware that this script will use the entire selected disk for the installation.
   Ensure you have backed up any important data before proceeding.
-  Please ensure you have a stable internet connection before proceeding.)"
+  Please ensure you have a stable internet connection before proceeding."
 
   echo -e "${RESET}"
   read -rp "$(echo -e ${INFO}Press ${INPUT}Enter${INFO} to proceed, ${INPUT}CTRL+C${INFO} to abort...${RESET})"
@@ -60,74 +63,78 @@ partition_warning() {
   "
 }
 
-# List block devices and prompt user for target install disk (function).
-target_disk() {
+# User selects a hostname (function).
+set_hostname() {
   display_header
-  info_print "=== List of available block devices ==="
-  lsblk -o NAME,SIZE,TYPE,MODEL
-  info_print "======================================="
-  local devices=($(lsblk -dn -o NAME))
-  for i in "${!devices[@]}"; do
-    input_print "$((i+1)). ${devices[$i]}"
-  done
-  input_print "Enter the number corresponding to the block device you want to install to:"
-  read -rp "" choice
-  INSTALL_DISK="/dev/${devices[$((choice-1))]}"
-  echo ""
-  Yn_print "You chose: $INSTALL_DISK, is this correct?"
-  read -rp confirm
-  if [[ "$confirm" =~ ^([nN][oO]?|[nN])$ ]]; then
-    Yn_print "Do you want to select the disk again, "Nn" will exit this installer?"
-    read -rp action
-    if [[ "$action" =~ ^([yY])$ ]]; then
-      target_disk
-    else
-      warning_print "Aborting installation."
-      exit 1
-    fi
-  fi
+  read -rp "$(echo -e ${INFO}Enter a name 'hostname' for this computer: ${RESET})" HOSTNAME
 }
 
-# Check for existing partitions and prompt for confirmation to overwrite (function).
-erase_partitions() {
-  display_header
-  if lsblk -ln -o NAME "$INSTALL_DISK" | grep -E "^${INSTALL_DISK#/dev/}(p?[0-9]+)"; then
-    display_warning
-    info_print "Warning: Existing partitions found on $INSTALL_DISK."
-    yN_print "Do you want to overwrite the existing partitions? This will delete all data on the disk."
-    read -rp OVERWRITE_CONFIRMATION
-    if [[ "$OVERWRITE_CONFIRMATION" =~ ^([yY][eE][sS]|[yY])$ ]]; then
-      info_print "=> Removing existing partitions on $INSTALL_DISK"
-      sgdisk --zap-all "$INSTALL_DISK"
-      partprobe "$INSTALL_DISK"
-      info_print "=> Existing partitions removed"
-    else
-      warning_print "Aborting installation."
-      exit 1
-    fi
+# User selects a locale (function).
+select_locale() {
+  info_print "=> Start typing to search for a locale, press Enter to select."
+  
+  # Read the available locales into an array
+  mapfile -t locales < <(grep -E '^[a-z]{2,}_[A-Z]{2,}' /mnt/etc/locale.gen | awk '{print $1}')
+  
+  # Use fzf to select a locale
+  selected_locale=$(printf "%s\n" "${locales[@]}" | fzf --prompt="Search: " --header="Locales available:")
+
+  if [[ -n "$selected_locale" ]]; then
+    echo "Selected locale: $selected_locale"
+    LOCALE="$selected_locale"
   else
-    info_print "No existing partitions found on $INSTALL_DISK"
+    echo "No locale selected."
   fi
 }
 
-# Unmount partitions (function).
-unmount_partitions() {
+# Setting up a password for the root account (function).
+set_root_password() {
   display_header
-  info_print "=> Checking for mounted partitions on $INSTALL_DISK"
-  sleep 1
-  while mount | grep "$INSTALL_DISK" >/dev/null; do
-    # Get the shortest (root-most) mount point for the disk
-    local mount_point=$(lsblk -ln -o MOUNTPOINT "$INSTALL_DISK" | grep -v '^$' | sort | head -n 1)
-    if [[ -z "$mount_point" ]]; then
-      info_print "No more mount points found for $INSTALL_DISK"
-      break
+  while true; do
+    read -s -rp "$(echo -e ${INFO}Enter a password for root: ${RESET})" ROOT_PASS1
+    if [[ -z "$ROOT_PASS1" ]]; then
+        waarning_print "You need to enter a password for the root user, please try again."
+        return 1
     fi
-    info_print "Unmounting $mount_point"
-    umount -R "$mount_point" || echo "Failed to unmount $mount_point"
-    sleep 1
+    read -s -rp "$(echo -e ${INFO}Confirm the password for root: ${RESET})" ROOT_PASS2
+    if [ "$ROOT_PASS1" == "$ROOT_PASS2" ]; then
+      ROOT_PASS="$ROOT_PASS1"
+      break
+    else
+      warning_print "Passwords do not match. Please try again."
+      sleep 1
+      return 1
+    fi
   done
-  info_print "=> All mount points unmounted on $INSTALL_DISK"
-  sleep 1
+}
+
+# Setting up a username and password for the user account (function).
+create_new_user() {
+  display_header
+  read -rp "$(info_print "Enter new username (must be all lowercase):")" NEW_USER
+  yN_print "Should $NEW_USER have sudo privileges?" 
+  read -rp SUDO_CHOICE
+  if [[ "$SUDO_CHOICE" =~ ^([yY][eE][sS]|[yY])$ ]]; then
+    SUDO_GROUP="-G wheel "
+  else
+    SUDO_GROUP=""
+  fi
+
+  while true; do
+    read -s -rp "$(info_print "Enter password for $NEW_USER: ")" USER_PASS1
+    echo
+    info_print 
+    read -s -rp "${INFO}Confirm password for $NEW_USER:  ${RESET}" USER_PASS2
+    echo
+    if [ "$USER_PASS1" == "$USER_PASS2" ]; then
+      USER_PASS="$USER_PASS1"
+      break
+    else
+      warning_print "Passwords do not match. Please try again."
+      sleep 1.5
+      return 1
+    fi
+  done
 }
 
 # Choose a kernel to install (function).
@@ -158,69 +165,60 @@ choose_kernel() {
   esac
 }
 
-# Setting up a password for the root account (function).
-set_root_password() {
+# List block devices and prompt user for target install disk (function).
+target_disk() {
   display_header
-  while true; do
-    read -s -rp "$(echo -e ${INFO}Enter a password for 'root': ${RESET})" ROOT_PASS1
-    echo
-    if [[ -z "$ROOT_PASS1" ]]; then
-        echo
-        error_print "You need to enter a password for the root user, please try again."
-        return 1
-    fi
-    read -s -rp "Confirm root password: " ROOT_PASS2
-    echo
-    if [ "$ROOT_PASS1" == "$ROOT_PASS2" ]; then
-      echo "=> Setting root password"
-      ROOT_PASS="$ROOT_PASS1"
-      break
-    else
-      echo "Passwords do not match. Please try again."
-      sleep 1.5
-    fi
+  info_print "=== List of available block devices ==="
+  lsblk -o NAME,SIZE,TYPE,MODEL
+  info_print "======================================="
+  local devices=($(lsblk -dn -o NAME))
+  for i in "${!devices[@]}"; do
+    input_print "$((i+1)). ${devices[$i]}"
   done
-}
-
-# Setting up a username and password for the user account (function).
-create_new_user() {
-  display_header
-  info_print "Enter new username (must be all lowercase):"
-  read -rp NEW_USER
-  yN_print "Should $NEW_USER have sudo privileges?" 
-  read -rp SUDO_CHOICE
-  if [[ "$SUDO_CHOICE" =~ ^([yY][eE][sS]|[yY])$ ]]; then
-    SUDO_GROUP="-G wheel "
-  else
-    SUDO_GROUP=""
+  input_print "Enter the number corresponding to the block device you want to install to:"
+  read -rp "" choice
+  INSTALL_DISK="/dev/${devices[$((choice-1))]}"
+  echo ""
+  Yn_print "You chose: $INSTALL_DISK, is this correct?"
+  read -rp confirm
+  if [[ "$confirm" =~ ^([nN][oO]?|[nN])$ ]]; then
+    Yn_print "Do you want to select the disk again, "Nn" will exit this installer?"
+    read -rp action
+    if [[ "$action" =~ ^([yY])$ ]]; then
+      target_disk
+    else
+      warning_print "Aborting installation."
+      exit 1
+    fi
   fi
-
-  while true; do
-    info_print "Enter password for $NEW_USER:"
-    read -s -rp USER_PASS1
-    echo
-    info_print 
-    read -s -rp "${INFO}Confirm password for $NEW_USER:  ${RESET}" USER_PASS2
-    echo
-    if [ "$USER_PASS1" == "$USER_PASS2" ]; then
-      USER_PASS="$USER_PASS1"
-      break
-    else
-      warning_print "Passwords do not match. Please try again."
-      sleep 1.5
-      return 1
-    fi
-  done
 }
 
-# User selects a hostname (function).
-set_hostname() {
+
+
+# Check for existing partitions and prompt for confirmation to overwrite (function).
+erase_partitions() {
   display_header
-  read -rp "$(echo -e ${INFO}Enter hostname: ${RESET})" HOSTNAME
+  if lsblk -ln -o NAME "$INSTALL_DISK" | grep -E "^${INSTALL_DISK#/dev/}(p?[0-9]+)"; then
+    display_warning
+    info_print "Warning: Existing partitions found on $INSTALL_DISK."
+    yN_print "Do you want to overwrite the existing partitions? This will delete all data on the disk."
+    read -rp OVERWRITE_CONFIRMATION
+    if [[ "$OVERWRITE_CONFIRMATION" =~ ^([yY][eE][sS]|[yY])$ ]]; then
+      info_print "=> Removing existing partitions on $INSTALL_DISK"
+      sgdisk --zap-all "$INSTALL_DISK"
+      partprobe "$INSTALL_DISK"
+      info_print "=> Existing partitions removed"
+    else
+      warning_print "Aborting installation."
+      exit 1
+    fi
+  else
+    info_print "No existing partitions found on $INSTALL_DISK"
+  fi
 }
 
-# User selects a locale (function).
 select_locale() {
+  display_header
   info_print "=> Start typing to search for a locale, press Enter to select."
   
   # Read the available locales into an array
@@ -231,10 +229,13 @@ select_locale() {
 
   if [[ -n "$selected_locale" ]]; then
     echo "Selected locale: $selected_locale"
-    LOCALE="$selected_locale"
+    echo "$selected_locale UTF-8" >> /mnt/etc/locale.gen
+    echo "LANG=$selected_locale" > /mnt/etc/locale.conf
+    locale-gen
   else
     echo "No locale selected."
   fi
+
 }
 
 # User selects a timezone (function).
@@ -254,6 +255,26 @@ select_timezone() {
   else
     echo "No timezone selected."
   fi
+}
+
+# Unmount partitions (function).
+unmount_partitions() {
+  display_header
+  info_print "=> Checking for mounted partitions on $INSTALL_DISK"
+  sleep 1
+  while mount | grep "$INSTALL_DISK" >/dev/null; do
+    # Get the shortest (root-most) mount point for the disk
+    local mount_point=$(lsblk -ln -o MOUNTPOINT "$INSTALL_DISK" | grep -v '^$' | sort | head -n 1)
+    if [[ -z "$mount_point" ]]; then
+      info_print "No more mount points found for $INSTALL_DISK"
+      break
+    fi
+    info_print "Unmounting $mount_point"
+    umount -R "$mount_point" || echo "Failed to unmount $mount_point"
+    sleep 1
+  done
+  info_print "=> All mount points unmounted on $INSTALL_DISK"
+  sleep 1
 }
 
 # Microcode detector (function).
