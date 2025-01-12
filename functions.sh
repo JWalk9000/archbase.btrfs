@@ -77,6 +77,7 @@ set_root_password() {
     echo ""
     if [[ -z "$ROOT_PASS1" ]]; then
         warning_print "You need to enter a password for the root user, please try again."
+        sleep 2
         return 1
     fi
     read -s -rp "$(echo -e ${INFO}Confirm the password for root: ${RESET})" ROOT_PASS2
@@ -114,9 +115,10 @@ create_new_user() {
     echo ""
     if [[ -z "$USER_PASS1" ]]; then
       warning_print "You need to enter a password for the new user, please try again."
+      sleep 2
       return 1
     fi
-    read -s -rp "$(info_print "Confirm password for $NEW_USER: ")" USER_PASS2
+    read -s -rp "$(info_print "Confirm password for ${NEW_USER}: ")" USER_PASS2
     echo ""
     if [ "$USER_PASS1" == "$USER_PASS2" ]; then
       USER_PASS="$USER_PASS1"
