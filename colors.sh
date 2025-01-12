@@ -1,13 +1,13 @@
 #!/bin/bash
 
 # Text color variables.
-WARNING='\e[0;31m' # Red
-BWARNING='\e[1;31m' # Bright Red
-BANNER='\e[0;32m' # Green
-INFO='\e[0;33m' # Yellow
-BINFO='\e[1;33m' # Bright Yellow
-INPUT='\e[0;34m' # Blue
-RESET='\e[0m' # No Color
+WARNING='\033[0;31m' # Red
+BWARNING='\033[1;31m' # Bright Red
+BANNER='\033[0;32m' # Green
+INFO='\033[0;33m' # Yellow
+BINFO='\033[1;33m' # Bright Yellow
+INPUT='\033[0;34m' # Blue
+RESET='\033[0m' # No Color
 
 # Information text color function.
 info_print() {
