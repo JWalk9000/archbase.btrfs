@@ -92,11 +92,13 @@ set_root_password() {
   display_header
   while true; do
     read -s -rp "$(echo -e ${INFO}Enter a password for root: ${RESET})" ROOT_PASS1
+    echo
     if [[ -z "$ROOT_PASS1" ]]; then
-        waarning_print "You need to enter a password for the root user, please try again."
+        warning_print "You need to enter a password for the root user, please try again."
         return 1
     fi
     read -s -rp "$(echo -e ${INFO}Confirm the password for root: ${RESET})" ROOT_PASS2
+    echo
     if [ "$ROOT_PASS1" == "$ROOT_PASS2" ]; then
       ROOT_PASS="$ROOT_PASS1"
       break
@@ -112,8 +114,9 @@ set_root_password() {
 create_new_user() {
   display_header
   read -rp "$(info_print "Enter new username (must be all lowercase):")" NEW_USER
-  yN_print "Should $NEW_USER have sudo privileges?" 
-  read -rp SUDO_CHOICE
+  echo 
+  read -rp "$(yN_print "Should $NEW_USER have sudo privileges?")" SUDO_CHOICE
+  echo
   if [[ "$SUDO_CHOICE" =~ ^([yY][eE][sS]|[yY])$ ]]; then
     SUDO_GROUP="-G wheel "
   else
@@ -124,7 +127,7 @@ create_new_user() {
     read -s -rp "$(info_print "Enter password for $NEW_USER: ")" USER_PASS1
     echo
     info_print 
-    read -s -rp "${INFO}Confirm password for $NEW_USER:  ${RESET}" USER_PASS2
+    read -s -rp "$(info_print "Confirm password for $NEW_USER: ")" USER_PASS2
     echo
     if [ "$USER_PASS1" == "$USER_PASS2" ]; then
       USER_PASS="$USER_PASS1"
