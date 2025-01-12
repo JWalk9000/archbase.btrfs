@@ -6,106 +6,27 @@ RAW_GITHUB="https://raw.githubusercontent.com"
 REPO="jwalk9000/archbase.btrfs/main"
 
 
-# Define colors
-GREEN='\033[0;32m'
-NC='\033[0m' # No Color
-
-# Function to display the header
-display_header() {
-  clear
-  echo -e "${GREEN}"
-  cat <<"EOF"
- 
-     __                     _  _      ___    ___    ___    ___  
-     \ \  __      __  __ _ | || | __ / _ \  / _ \  / _ \  / _ \ 
-      \ \ \ \ /\ / / / _` || || |/ /| (_) || | | || | | || | | |
-   /\_/ /  \ V  V / | (_| || ||   <  \__, || |_| || |_| || |_| |
-   \___/    \_/\_/   \__,_||_||_|\_\   /_/  \___/  \___/  \___/ 
-                                                          
-                       CHROOT SETUP                                      
-         _____              _           _  _                      
-         \_   \ _ __   ___ | |_   __ _ | || |  ___  _ __         
-          / /\/| '_ \ / __|| __| / _` || || | / _ \| '__|        
-       /\/ /_  | | | |\__ \| |_ | (_| || || ||  __/| |           
-       \____/  |_| |_||___/ \__| \__,_||_||_| \___||_|     
-
-EOF
-  echo -e "${NC}"
-}
-
-# Display the header at the start
-display_header
 
 # 1. Localization
-display_header
-echo "=> Setting locale to en_US.UTF-8"
-sleep 1.5
-echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen
-locale-gen
-echo "LANG=en_US.UTF-8" > /etc/locale.conf
+until select_locale; do : ; done
 
 # 2. Network configuration
-display_header
-read -rp "Enter hostname: " HOSTNAME
-echo "=> Configuring hostname and /etc/hosts"
-sleep 1.5
-echo "$HOSTNAME" > /etc/hostname
-{
-  echo "127.0.0.1       localhost"
-  echo "::1             localhost"
-  echo "127.0.1.1       $HOSTNAME.localdomain $HOSTNAME"
-} >> /etc/hosts
+until set_hostname; do : ; done
 
 # Enable essential services
-display_header
-echo "=> Enabling Network and SSH"
+info_print "=> Enabling Network and SSH"
 sleep 1
-
-systemctl enable NetworkManager
-#systemctl enable netctl
-systemctl enable sshd
+arch-chroot /mnt systemctl enable NetworkManager
+arch-chroot /mnt systemctl enable sshd
 
 # 3. Root password
-display_header
-read -rp "Would you like to set a root password? (y/N): " ROOT_PASS
-if [[ "$ROOT_PASS" =~ ^([yY][eE][sS]|[yY])$ ]]; then
-  echo "=> Set root password, leave blank for no root password"
-  passwd root
-else
-  echo "=> Skipping root password setup"
-  sleep 1.5
-fi
+until set_root_password; do : ; done
 
-# 4. Interactive new user creation
-display_header
-read -rp "Enter new username: " NEW_USER
-useradd -m -s /bin/bash "$NEW_USER"
-
-read -rp "Should $NEW_USER have sudo privileges? (y/N): " SUDO_CHOICE
-if [[ "$SUDO_CHOICE" =~ ^([yY][eE][sS]|[yY])$ ]]; then
-  usermod -aG wheel "$NEW_USER"
-  echo "%wheel ALL=(ALL) ALL" >> /etc/sudoers
-fi
-
-echo "=> Set password for $NEW_USER"
-passwd "$NEW_USER"
+# 4. New user creation
+until create_new_user; do : ; done
 
 # 5. Detect dedicated GPU
-display_header
-echo "=> Detecting dedicated GPU"
-sleep 1.5
-if lspci | grep -i -E "VGA compatible controller|3D controller"; then
-  display_header
-  read -rp "Dedicated GPU detected. Would you like to install GPU drivers? (y/N): " INSTALL_GPU
-  if [[ "$INSTALL_GPU" =~ ^([yY][eE][sS]|[yY])$ ]]; then
-    echo "=> Installing GPU drivers"
-    sleep 1.5
-    bash <(curl -s "$RAW_GITHUB/$REPO/install_gpu.sh")
-  fi
-else
-  echo "No dedicated GPU detected."
-  sleep 1.5
-fi
+until gpu_drivers; do : ; done
 
 # 6. Interactive bootloader installation
 display_header
