@@ -248,9 +248,19 @@ fi
 EOF
 
 # Unmount the partitions
-info_print "=> Unmounting the partitions"
+display_header
+info_print "=> Unmounting new installation"
+sleep 1.5
 umount -R /mnt
 
-# Reboot the system
-info_print "=> Installation complete. Rebooting the system."
+display_header
+info_print "========================================================================"
+info_print "                 Base system installation complete."
+info_print "                           Next steps:"
+info_print " "
+info_print "                    1) Reboot into the new system."
+info_print "  2) The post-install script will run automatically on the first boot."
+info_print "========================================================================"
+
+read -rp "Please remove the boot media and press [Enter] to reboot..."
 reboot
