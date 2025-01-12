@@ -65,6 +65,9 @@ until choose_kernel; do : ; done
 # Detect and install microcode
 until microcode_detector; do : ; done
 
+# Select additional packages to install
+until user_packages; do : ; done
+
 # Detect and install GPU drivers
 until gpu_drivers; do : ; done
 
@@ -81,7 +84,7 @@ until unmount_partitions; do : ; done
 until erase_partitions; do : ; done
 
 # Start the installation process
-start_installation
+install_message
 
 # Partition the disk
 (

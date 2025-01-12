@@ -387,7 +387,7 @@ target_disk() {
   INSTALL_DISK="/dev/${devices[$((choice-1))]}"
   echo ""
   Yn_print "You chose: $INSTALL_DISK, is this correct?"
-  read -rp confirm
+  read -rp "" confirm
   if [[ "$confirm" =~ ^([nN][oO]?|[nN])$ ]]; then
     Yn_print "Do you want to select the disk again, "Nn" will exit this installer?"
     read -rp "" action
