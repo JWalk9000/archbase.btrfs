@@ -117,7 +117,7 @@ create_new_user() {
     if [[ -z "$USER_PASS1" ]]; then
       warning_print "You need to enter a password for the new user, please try again."
       sleep 2
-      return 2
+      continue
     fi
     read -s -rp "$(info_print "Confirm password for ${NEW_USER}: ")" USER_PASS2
     echo ""
@@ -127,7 +127,6 @@ create_new_user() {
     else
       warning_print "Passwords do not match. Please try again."
       sleep 2
-      return 2
     fi
   done
 }
