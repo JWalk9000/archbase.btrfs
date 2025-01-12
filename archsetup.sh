@@ -211,7 +211,7 @@ case "$BOOTLOADER" in
 esac
 
 # Install GPU drivers if selected
-if [ -n "$INSTALL_GPU_DRIVERS" ]; then
+if [ -n "$INSTALL_GPU_DRIVERS" ] && [ "$INSTALL_GPU_DRIVERS" != "false" ]; then
   pacman -S --noconfirm $INSTALL_GPU_DRIVERS
 fi
 EOF
