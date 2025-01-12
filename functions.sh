@@ -381,16 +381,16 @@ target_disk() {
   info_print "======================================="
   local devices=($(lsblk -dn -o NAME))
   for i in "${!devices[@]}"; do
-    input_print "$((i+1)). ${devices[$i]}"
+    choices_print "$((i+1))." "${devices[$i]}"
   done
-  read -rp "$(input_print "Enter the number corresponding to the block device you want to install to: ")" choice
+  read -rp "$(info_print "Enter the number corresponding to the block device you want to install to: ")" choice
   INSTALL_DISK="/dev/${devices[$((choice-1))]}"
   echo ""
   Yn_print "You chose: $INSTALL_DISK, is this correct?"
   read -rp confirm
   if [[ "$confirm" =~ ^([nN][oO]?|[nN])$ ]]; then
     Yn_print "Do you want to select the disk again, "Nn" will exit this installer?"
-    read -rp action
+    read -rp "" action
     if [[ "$action" =~ ^([yY])$ ]]; then
       target_disk
     else
@@ -424,10 +424,10 @@ unmount_partitions() {
 erase_partitions() {
   display_header
   if lsblk -ln -o NAME "$INSTALL_DISK" | grep -E "^${INSTALL_DISK#/dev/}(p?[0-9]+)"; then
-    display_warning
+    partition_warning
     info_print "Warning: Existing partitions found on $INSTALL_DISK."
     yN_print "Do you want to overwrite the existing partitions? This will delete all data on the disk."
-    read -rp OVERWRITE_CONFIRMATION
+    read -rp "" OVERWRITE_CONFIRMATION
     if [[ "$OVERWRITE_CONFIRMATION" =~ ^([yY][eE][sS]|[yY])$ ]]; then
       info_print "=> Removing existing partitions on $INSTALL_DISK"
       sgdisk --zap-all "$INSTALL_DISK"
