@@ -3,7 +3,7 @@
 RAW_GITHUB="https://raw.githubusercontent.com"
 REPO="jwalk9000/archbase.btrfs/main"
 
-source $RAW_GITHUB/$REPO/colors.sh
+source <(curl -s $RAW_GITHUB/$REPO/colors.sh)
 
 # Function to display the header.
 
