@@ -12,6 +12,7 @@ PKGDEPS=(
   "jq" 
   "fzf"
 )
+pacman -Sy
 
 info_print "=> Installing script dependencies"
 for PKG in "${PKGDEPS[@]}"; do
