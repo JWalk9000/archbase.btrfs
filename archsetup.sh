@@ -197,21 +197,27 @@ systemctl enable NetworkManager
 systemctl enable sshd
 
 # Install the bootloader
-case "$BOOTLOADER" in
-  "systemd-boot")
-    bootctl --path=/boot install
-    ;;
-  "rEFInd")
-    pacman -S --noconfirm refind
-    refind-install
-    mkrlconf --root /mnt --subvol @ --output /mnt/boot/refind_linux.conf
-    ;;
-  *)
-    pacman -S --noconfirm grub
-    grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB
-    grub-mkconfig -o /boot/grub/grub.cfg
-    ;;
-esac
+if [ -d /sys/firmware/efi/efivars ]; then
+  case "$BOOTLOADER" in
+    "systemd-boot")
+      bootctl --path=/boot install
+      ;;
+    "rEFInd")
+      pacman -S --noconfirm refind
+      refind-install
+      mkrlconf --root /mnt --subvol @ --output /mnt/boot/refind_linux.conf
+      ;;
+    *)
+      pacman -S --noconfirm grub
+      grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB
+      grub-mkconfig -o /boot/grub/grub.cfg
+      ;;
+  esac
+else
+  pacman -S --noconfirm grub
+  grub-install --target=i386-pc "$INSTALL_DISK"
+  grub-mkconfig -o /boot/grub/grub.cfg
+fi
 
 # Install GPU drivers if selected
 if [ -n "$INSTALL_GPU_DRIVERS" ] && [ "$INSTALL_GPU_DRIVERS" != "false" ]; then
