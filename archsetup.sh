@@ -5,6 +5,8 @@ RAW_GITHUB="https://raw.githubusercontent.com"
 REPO="jwalk9000/archbase.btrfs/main"
 
 source <(curl -s $RAW_GITHUB/$REPO/functions.sh)
+source <(curl -s $RAW_GITHUB/$REPO/colors.sh)
+
 
 #list of variables
 
