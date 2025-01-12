@@ -6,9 +6,6 @@ REPO="jwalk9000/archbase.btrfs/main"
 source <(curl -s $RAW_GITHUB/$REPO/colors.sh)
 
 # Function to display the header.
-
-
-
 display_header() {
   clear
   tput cup 0 0  
@@ -46,7 +43,8 @@ greet_user() {
 
 EOL
   echo -e "${RESET}"
-  read -rp "${INFO}Press ${INPUT}Enter${INFO} to continue...${RESET}"
+  echo -e "${INFO}Press ${INPUT}Enter${INFO} to continue...${RESET}"
+  read -rp 
 }
 
 # Display partition WARNING message (function).
@@ -161,7 +159,8 @@ choose_kernel() {
 set_root_password() {
   display_header
   while true; do
-    read -s -rp "${INFO}Enter root password: ${RESET}" ROOT_PASS1
+    Echo -e "${INFO}Enter root password: ${RESET}"
+    read -s -rp "" ROOT_PASS1
     echo
     if [[ -z "$ROOT_PASS1" ]]; then
         echo
