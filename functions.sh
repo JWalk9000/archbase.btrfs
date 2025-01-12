@@ -33,17 +33,17 @@ EOF
 greet_user() {
   echo -e "${INFO}"
   cat << EOL
-  Welcome to my Arch Linux Base installation script.
+  "Welcome to my Arch Linux Base installation script.
   This script will streamline the installation process, creating a minimal Arch Linux system.
   
-  $(${WARNING}'
+  $(echo -e ${WARNING}
   Please be aware that this script will use the entire selected disk for the installation.
   Ensure you have backed up any important data before proceeding.
-  Please ensure you have a stable internet connection before proceeding.')
+  Please ensure you have a stable internet connection before proceeding.)"
 
 EOL
   echo -e "${RESET}"
-  read -rp "$(echo -e ${INFO}Press ${INPUT}Enter${INFO} to continue...${RESET})"
+  read -rp "$(echo -e ${INFO}Press ${INPUT}Enter${INFO} to proceed, ${INPUT}CTRL+C${INFO} to abort...${RESET})"
 }
 
 # Display partition WARNING message (function).
@@ -134,7 +134,7 @@ choose_kernel() {
   choices_print "2" ") linux-lts: Long-term Support kernel."
   choices_print "3" ") linux-zen: Kernel with the desktop optimizations."
   choices_print "4" ") linux-hardened: a Security-focused kernel."
-  read -rp "${INFO}Kernel choice [1-4]: " KERNEL_CHOICE
+  read -rp "$(echo -e ${INFO}Kernel choice [1-4]: ${reset})" KERNEL_CHOICE
   case $KERNEL_CHOICE in
     1)
       KERNEL_PKG="linux"
@@ -158,8 +158,7 @@ choose_kernel() {
 set_root_password() {
   display_header
   while true; do
-    Echo -e "${INFO}Enter root password: ${RESET}"
-    read -s -rp "" ROOT_PASS1
+    read -s -rp "$(echo -e ${INFO}Enter a password for 'root': ${RESET})" ROOT_PASS1
     echo
     if [[ -z "$ROOT_PASS1" ]]; then
         echo
@@ -213,7 +212,7 @@ create_new_user() {
 # User selects a hostname (function).
 set_hostname() {
   display_header
-  read -rp "${INFO}Enter hostname: ${RESET}" HOSTNAME
+  read -rp "$(echo -e ${INFO}Enter hostname: ${RESET})" HOSTNAME
 }
 
 # User selects a locale (function).
