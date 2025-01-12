@@ -44,7 +44,7 @@ greet_user() {
 EOL
   echo -e "${RESET}"
   echo -e "${INFO}Press ${INPUT}Enter${INFO} to continue...${RESET}"
-  read -rp 
+  read -rp ""
 }
 
 # Display partition WARNING message (function).
@@ -68,7 +68,7 @@ target_disk() {
     input_print "$((i+1)). ${devices[$i]}"
   done
   input_print "Enter the number corresponding to the block device you want to install to:"
-  read -rp choice
+  read -rp "" choice
   INSTALL_DISK="/dev/${devices[$((choice-1))]}"
   echo ""
   Yn_print "You chose: $INSTALL_DISK, is this correct?"
