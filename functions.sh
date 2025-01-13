@@ -106,7 +106,7 @@ create_new_user() {
   read -rp "$(yN_print "Should ${NEW_USER} have sudo privileges?")" SUDO_CHOICE
   echo ""
   if [[ "$SUDO_CHOICE" =~ ^([yY][eE][sS]|[yY])$ ]]; then
-    SUDO_GROUP="-G wheel "
+    SUDO_GROUP="true"
   else
     SUDO_GROUP=""
   fi

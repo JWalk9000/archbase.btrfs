@@ -231,7 +231,12 @@ echo "$HOSTNAME" > /etc/hostname
 echo "root:$ROOT_PASS" | chpasswd
 
 # Create the new user
-useradd -m -s /bin/bash $SUDO_GROUP "$NEW_USER"
+if [ $SUDO_GROUP == "true" ]; then
+  useradd -m -G wheel -s /bin/bash $NEW_USER
+else
+  useradd -m -s /bin/bash $NEW_USER
+fi
+
 echo "$NEW_USER:$USER_PASS" | chpasswd
 
 # Enable essential services
