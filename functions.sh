@@ -342,6 +342,7 @@ gpu_drivers() {
     fi
   else
     info_print "No dedicated GPU detected."
+    INSTALL_GPU_DRIVERS=""
     sleep 1.5
   fi
 }

@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+#temp file for troubleshooting
+
 RAW_GITHUB="https://raw.githubusercontent.com"
 REPO="jwalk9000/archbase.btrfs/main"
 

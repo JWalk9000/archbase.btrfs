@@ -36,17 +36,17 @@ ROOT_PASS=""
 NEW_USER=""
 USER_PASS=""
 SUDO_GROUP=""
+LOCALE=""
+TIMEZONE=""
+BOOTLOADER=""
 
 MICROCODE=""
 KERNEL_PKG=""
-LOCALE=""
-TIMEZONE=""
-AUTOLOGIN_CHOICE=""
-DESKTOP_CHOICE=""
-BOOTLOADER=""
 INSTALL_DISK=""
 INSTALL_GPU_DRIVERS=false
-DESKTOP=false
+DESKTOP_CHOICE=""
+AUTOLOGIN_CHOICE=""
+
 
 
 # Display the header at the start
@@ -197,15 +197,23 @@ fi
 install_message
 info_print "=> Installing base system with $KERNEL_PKG and essential packages"
 sleep 1
-pacstrap /mnt base $KERNEL_PKG $MICROCODE linux-firmware btrfs-progs base-devel git curl nano openssh networkmanager pciutils usbutils $EFIBOOTMGR $USERPKGS
-if $user_packages; then
-  pacstrap /mnt $USERPKGS
-fi
+pacstrap /mnt base $KERNEL_PKG $MICROCODE linux-firmware btrfs-progs base-devel git curl nano openssh networkmanager pciutils usbutils $EFIBOOTMGR $USERPKGS $INSTALL_GPU_DRIVERS
 
 # Generate the fstab file
 install_message
 info_print "=> Generating the fstab file"
 genfstab -U /mnt >> /mnt/etc/fstab
+
+# Export the configuration variables
+export HOSTNAME
+export ROOT_PASS
+export NEW_USER
+export USER_PASS
+export SUDO_GROUP
+export LOCALE
+export TIMEZONE
+export BOOTLOADER
+export INSTALL_DISK
 
 # Chroot into the new system and configure it
 info_print "=> Configuring the new system"
@@ -271,70 +279,50 @@ else
   grub-mkconfig -o /boot/grub/grub.cfg
 fi
 
-# Install a desktop environment scripts if selected
-#if [ $DESKTOP_CHOICE == "true" ]; then
-#  mkdir -p /home/$NEW_USER/firstBoot
-#  info_print "=> Installing firstBoot scripts"
-#  sleep 1
-#  FB_FILES=(
-#    "firstBoot.sh"
-#    "gui_options.json"
-#    "install_yay.sh"
-#    "disable-autologin.sh"
-#  )
-#  info_print "=> Downloading and installing firstBoot scripts"
-#  sleep 1
-#  for FILE in "${FB_FILES[@]}"; do 
-#    curl -s "$RAW_GITHUB/$REPO/firstBoot/$FILE" | sed "s/user_placeholder/$NEW_USER/g" > /home/$NEW_USER/firstBoot/$FILE
-#    done
-#    info_print "=> Setting permissions for firstBoot scripts"
-#    sleep 1
-#  for FILE in "${FB_FILES[@]}"; do
-#    chmod +x /home/$NEW_USER/firstBoot/$FILE
-#  done
-#  info_print "=> checking that the firstBoot directory was populated"
-#  ls -l /home/$NEW_USER/firstBoot
-#  sleep 3
-#
-#  # Change ownership to the new user
-#  chown -R $NEW_USER:$NEW_USER /home/$NEW_USER/firstBoot
-#  
-#  # Add the firstBoot scrip to the system path
-#  echo "export PATH=$PATH:/home/$NEW_USER/firstBoot" >> /home/$NEW_USER/.bashrc
-#fi
+EOF
 
-# Install GPU drivers if selected
-if [ -n "$INSTALL_GPU_DRIVERS" ] && [ "$INSTALL_GPU_DRIVERS" != "false" ]; then
-  pacman -S --noconfirm $INSTALL_GPU_DRIVERS
+#Install a desktop environment scripts if selected
+if [ $DESKTOP_CHOICE == "true" ]; then
+  mkdir -p /mnt/home/$NEW_USER/firstBoot
+  info_print "=> Installing firstBoot scripts"
+  sleep 1
+  FB_FILES=(
+    "firstBoot.sh"
+    "gui_options.json"
+    "install_yay.sh"
+    "disable-autologin.sh"
+  )
+  info_print "=> Downloading and installing firstBoot scripts"
+  sleep 1
+  for FILE in "${FB_FILES[@]}"; do 
+    curl -s "$RAW_GITHUB/$REPO/firstBoot/$FILE" | sed "s/user_placeholder/$NEW_USER/g" > /mnt/home/$NEW_USER/firstBoot/$FILE
+    done
+    info_print "=> Setting permissions for firstBoot scripts"
+    sleep 1
+  for FILE in "${FB_FILES[@]}"; do
+    chmod +x /mnt/home/$NEW_USER/firstBoot/$FILE
+  done
+  info_print "=> checking that the firstBoot directory was populated"
+  ls -l /mnt/home/$NEW_USER/firstBoot
+  sleep 3
+
+# Change ownership to the new user
+  chown -R $NEW_USER:$NEW_USER /mnt/home/$NEW_USER/firstBoot
+  
+# Add the firstBoot scrip to the system path
+  echo "export PATH=$PATH:/home/$NEW_USER/firstBoot" >> /mnt/home/$NEW_USER/.bashrc
 fi
-
-
-
-
 
 
 # Enable automatic login for the new user
 if [ $AUTOLOGIN_CHOICE == "true" ]; then
-  mkdir -p /etc/systemd/system/getty@tty1.service.d
-  {
-    echo "[Service]" 
-    echo "ExecStart=" 
-    echo "ExecStart=-/usr/bin/agetty --autologin $NEW_USER --noclear %I \$TERM" 
-  } > /etc/systemd/system/getty@tty1.service.d/override.conf
-  #systemctl daemon-reload
+  mkdir -p /mnt/etc/systemd/system/getty@tty1.service.d
+  cat <<EOL > /mnt/etc/systemd/system/getty@tty1.service.d/override.conf
+    "[Service]" 
+    "ExecStart=" 
+    "ExecStart=-/usr/bin/agetty --autologin $NEW_USER --noclear %I \$TERM" 
+EOL
 fi
-
-EOF
-
-if [ "$DESKTOP_CHOICE" == "true" ]; then
-  arch-chroot /mnt /bin/bash -c "bash <(curl -s $RAW_GITHUB/$REPO/de-setup.sh)"
-
-#if [ "$DESKTOP" == "true" ]; then
-#  curl -s "$RAW_GITHUB/$REPO/setup_desktop.sh" -o /mnt/setup_desktop.sh
-#  sed -i "s/user_placeholder/$NEW_USER/g" /mnt/setup_desktop.sh
-#  arch-chroot /mnt bash /setup_desktop.sh
-#  rm /mnt/setup_desktop.sh
-#fi
 
 # Unmount the partitions
 display_header
