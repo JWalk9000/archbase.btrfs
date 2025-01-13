@@ -6,7 +6,7 @@ BWARNING='\033[1;31m' # Bright Red
 BANNER='\033[0;32m' # Green
 INFO='\033[0;33m' # Yellow
 BINFO='\033[1;33m' # Bright Yellow
-INPUT='\033[0;34m' # Blue
+INPUT='\033[1;34m' # Bright Blue
 RESET='\033[0m' # No Color
 
 # Information text color function.

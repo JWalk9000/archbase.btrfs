@@ -457,3 +457,31 @@ install_message() {
   tput cup 20 0 
   sleep 1
 }
+
+####################################################################################################
+#
+# Post installation functions.. WIP
+#
+####################################################################################################
+
+
+
+# Enable Auto-login for the user (function).
+autologin_setup() {
+  display_header
+  Yn_print "Would you like to enable autologin for the $NEW_USER?"
+  read -rp "" AUTOLOGIN_CHOICE
+  if [[ "$AUTOLOGIN_CHOICE" =~ ^([yY][eE][sS]|[yY])$ ]]; then
+    AUTOLOGIN_CHOICE="true"
+    info_print "=> Setting up autologin for the first boot"
+  fi
+}    
+    
+desktop_environment() {
+  display_header
+  Yn_print " would you like to enable the desktop environment install script as a command?"
+  read -rp "" DESKTOP_CHOICE
+  if [[ "$DESKTOP_CHOICE" =~ ^([yY][eE][sS]|[yY])$ ]]; then
+    DESKTOP_CHOICE="true"    
+  fi
+}

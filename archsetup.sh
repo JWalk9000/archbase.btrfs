@@ -21,18 +21,31 @@ for PKG in "${PKGDEPS[@]}"; do
   fi
 done
 
+#####################################################
+# Script variables -- some of these can be pre-set  #
+# and the respective prompts can be skipped by      #
+# commenting them out with a #.                     #
+#                                                   #
+# Note: It is not recommended to preset Credentials #
+# in a script                                       #
+#                                                   #
+#####################################################
 
-#list of variables
-KERNEL_PKG=""
-MICROCODE=""
+
+HOSTNAME=""
 ROOT_PASS=""
 NEW_USER=""
 USER_PASS=""
-HOSTNAME=""
+SUDO_GROUP=""
+
+MICROCODE=""
+KERNEL_PKG=""
 LOCALE=""
 TIMEZONE=""
-INSTALL_DISK=""
+AUTOLOGIN_CHOICE=""
+DESKTOP_CHOICE=""
 BOOTLOADER=""
+INSTALL_DISK=""
 INSTALL_GPU_DRIVERS=false
 DESKTOP=false
 
@@ -67,6 +80,12 @@ until microcode_detector; do : ; done
 
 # Select additional packages to install
 until user_packages; do : ; done
+
+# offer to enable automatic loggin
+until autologin_setup; do : ; done
+
+# offer to enable Destop environment setup
+until desktop_environment; do : ; done
 
 # Detect and install GPU drivers
 until gpu_drivers; do : ; done
@@ -220,6 +239,10 @@ echo "$NEW_USER:$USER_PASS" | chpasswd
 systemctl enable NetworkManager
 systemctl enable sshd
 
+########################################
+# Enable other services here if needed #
+########################################
+
 # Install the bootloader
 if [ -d /sys/firmware/efi/efivars ]; then
   case "$BOOTLOADER" in
@@ -243,11 +266,50 @@ else
   grub-mkconfig -o /boot/grub/grub.cfg
 fi
 
+# Install a desktop environment scripts if selected
+if [ $DESKTOP == "true" ]; then
+    mkdir -p /home/$NEW_USER/firstBoot
+    
+    FB_FILES=(
+      "firstBoot.sh"
+      "gui_options.yml"
+      "install_yay.sh"
+      "disable-autologin.sh"
+
+    )
+    for FILE in "${FB_FILES[@]}"; do 
+      curl -s "$RAW_GITHUB/$REPO/firstBoot/$FILE" | sed "s/user_placeholder/$NEW_USER/g" > /home/$NEW_USER/firstBoot/$FILE
+      done
+
+    for FILE in "${FB_FILES[@]}"; do
+      chmod +x /home/$NEW_USER/firstBoot/$FILE
+    done
+
+    # Change ownership to the new user
+    chown -R $NEW_USER:$NEW_USER /home/$NEW_USER/firstBoot
+    
+    # Add the firstBoot scrip to the system path
+    echo "export PATH=$PATH:/home/$NEW_USER/firstBoot" >> /home/$NEW_USER/.bashrc
+
+
 # Install GPU drivers if selected
 if [ -n "$INSTALL_GPU_DRIVERS" ] && [ "$INSTALL_GPU_DRIVERS" != "false" ]; then
   pacman -S --noconfirm $INSTALL_GPU_DRIVERS
 fi
+
+# Enable automatic login for the new user
+if [ $AUTOLOGIN_CHOICE == "true" ]; then
+  mkdir -p /mnt/etc/systemd/system/getty@tty1.service.d
+  cat <<EOL > /etc/systemd/system/getty@tty1.service.d/override.conf
+  [Service]
+  ExecStart=
+  ExecStart=-/usr/bin/agetty --autologin $NEW_USER --noclear %I \$TERM
+fi
+
+systemctl daemon-reload
+
 EOF
+
 
 # Unmount the partitions
 display_header
@@ -256,13 +318,13 @@ sleep 1.5
 umount -R /mnt
 
 display_header
-info_print "========================================================================"
+info_print "============================================================================"
 info_print "                 Base system installation complete."
 info_print "                           Next steps:"
 info_print " "
 info_print "                    1) Reboot into the new system."
-info_print "  2) The post-install script will run automatically on the first boot."
-info_print "========================================================================"
+info_print "  2) If you chose to install a desktop you can run ${INPUT}firstBoot${RESET} once logged in."
+info_print "============================================================================"
 
 read -rp "Please remove the boot media and press [Enter] to reboot..."
 reboot

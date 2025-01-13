@@ -74,28 +74,27 @@ fi
 
 # 8. Setup firstBoot experience
 display_header
-echo "=> Preparing to install a Desktop Environment on the first boot"
 sleep 1.5
 
 mkdir -p /home/$NEW_USER/firstBoot
 
-FB_FILES=(
-  "firstBoot.sh"
-  "gui_options.yml"
-  "install_yay.sh"
-  "disable-autologin.sh"
+    FB_FILES=(
+      "firstBoot.sh"
+      "gui_options.yml"
+      "install_yay.sh"
+      "disable-autologin.sh"
 
-)
-for FILE in "${FB_FILES[@]}"; do 
-  curl -s "$RAW_GITHUB/$REPO/firstBoot/$FILE" | sed "s/user_placeholder/$NEW_USER/g" > /home/$NEW_USER/firstBoot/$FILE
-  done
+    )
+    for FILE in "${FB_FILES[@]}"; do 
+      curl -s "$RAW_GITHUB/$REPO/firstBoot/$FILE" | sed "s/user_placeholder/$NEW_USER/g" > /home/$NEW_USER/firstBoot/$FILE
+      done
 
-for FILE in "${FB_FILES[@]}"; do
-  chmod +x /home/$NEW_USER/firstBoot/$FILE
-done
+    for FILE in "${FB_FILES[@]}"; do
+      chmod +x /home/$NEW_USER/firstBoot/$FILE
+    done
 
-# Change ownership to the new user
-chown -R $NEW_USER:$NEW_USER /home/$NEW_USER/firstBoot
+    # Change ownership to the new user
+    chown -R $NEW_USER:$NEW_USER /home/$NEW_USER/firstBoot
 
 # Create the systemd service
 cat <<EOL > /etc/systemd/system/firstboot.service
