@@ -6,11 +6,10 @@ REPO="jwalk9000/archbase.btrfs/main"
 source <(curl -s $RAW_GITHUB/$REPO/functions.sh)
 source <(curl -s $RAW_GITHUB/$REPO/colors.sh)
 
-user=""
-NEW_USER=$user
 
-# Install a desktop environment scripts if selected
+NEW_USER="user_placeholder"
 
+# Install a desktop environment scripts
 mkdir -p /home/$NEW_USER/firstBoot
 
 FB_FILES=(
