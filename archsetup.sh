@@ -272,36 +272,36 @@ else
 fi
 
 # Install a desktop environment scripts if selected
-if [ $DESKTOP_CHOICE == "true" ]; then
-  mkdir -p /home/$NEW_USER/firstBoot
-  info_print "=> Installing firstBoot scripts"
-  sleep 1
-  FB_FILES=(
-    "firstBoot.sh"
-    "gui_options.json"
-    "install_yay.sh"
-    "disable-autologin.sh"
-  )
-  info_print "=> Downloading and installing firstBoot scripts"
-  sleep 1
-  for FILE in "${FB_FILES[@]}"; do 
-    curl -s "$RAW_GITHUB/$REPO/firstBoot/$FILE" | sed "s/user_placeholder/$NEW_USER/g" > /home/$NEW_USER/firstBoot/$FILE
-    done
-    info_print "=> Setting permissions for firstBoot scripts"
-    sleep 1
-  for FILE in "${FB_FILES[@]}"; do
-    chmod +x /home/$NEW_USER/firstBoot/$FILE
-  done
-  info_print "=> checking that the firstBoot directory was populated"
-  ls -l /home/$NEW_USER/firstBoot
-  sleep 3
-
-  # Change ownership to the new user
-  chown -R $NEW_USER:$NEW_USER /home/$NEW_USER/firstBoot
-  
-  # Add the firstBoot scrip to the system path
-  echo "export PATH=$PATH:/home/$NEW_USER/firstBoot" >> /home/$NEW_USER/.bashrc
-fi
+#if [ $DESKTOP_CHOICE == "true" ]; then
+#  mkdir -p /home/$NEW_USER/firstBoot
+#  info_print "=> Installing firstBoot scripts"
+#  sleep 1
+#  FB_FILES=(
+#    "firstBoot.sh"
+#    "gui_options.json"
+#    "install_yay.sh"
+#    "disable-autologin.sh"
+#  )
+#  info_print "=> Downloading and installing firstBoot scripts"
+#  sleep 1
+#  for FILE in "${FB_FILES[@]}"; do 
+#    curl -s "$RAW_GITHUB/$REPO/firstBoot/$FILE" | sed "s/user_placeholder/$NEW_USER/g" > /home/$NEW_USER/firstBoot/$FILE
+#    done
+#    info_print "=> Setting permissions for firstBoot scripts"
+#    sleep 1
+#  for FILE in "${FB_FILES[@]}"; do
+#    chmod +x /home/$NEW_USER/firstBoot/$FILE
+#  done
+#  info_print "=> checking that the firstBoot directory was populated"
+#  ls -l /home/$NEW_USER/firstBoot
+#  sleep 3
+#
+#  # Change ownership to the new user
+#  chown -R $NEW_USER:$NEW_USER /home/$NEW_USER/firstBoot
+#  
+#  # Add the firstBoot scrip to the system path
+#  echo "export PATH=$PATH:/home/$NEW_USER/firstBoot" >> /home/$NEW_USER/.bashrc
+#fi
 
 # Install GPU drivers if selected
 if [ -n "$INSTALL_GPU_DRIVERS" ] && [ "$INSTALL_GPU_DRIVERS" != "false" ]; then
@@ -323,6 +323,15 @@ fi
 
 EOF
 
+#if [ "$DESKTOP" == "true" ]; then
+#  arch-chroot /mnt /bin/bash -c "bash <(curl -s $RAW_GITHUB/$REPO/de-setup.sh)"
+
+if [ "$DESKTOP" == "true" ]; then
+  curl -s "$RAW_GITHUB/$REPO/setup_desktop.sh" -o /mnt/setup_desktop.sh
+  sed -i "s/user/$NEW_USER/g" /mnt/setup_desktop.sh
+  arch-chroot /mnt bash /setup_desktop.sh
+  rm /mnt/setup_desktop.sh
+fi
 
 # Unmount the partitions
 display_header
