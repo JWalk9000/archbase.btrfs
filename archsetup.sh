@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/bash
 set -e
 
 RAW_GITHUB="https://raw.githubusercontent.com"
@@ -168,10 +168,12 @@ mkdir -p /mnt/.snapshots
 mount -o subvol=@snapshots "$BTRFS_PART" /mnt/.snapshots
 
 # Mount EFI partition
-info_print "=> Mounting EFI partition at /mnt/boot"
-sleep 1
-mkdir -p /mnt/boot
-mount "$EFI_PART" /mnt/boot
+if [ -d /sys/firmware/efi/efivars ]; then
+  info_print "=> Mounting EFI partition at /mnt/boot"
+  sleep 1
+  mkdir -p /mnt/boot
+  mount "$EFI_PART" /mnt/boot
+fi
 
 # Install the base system and user-selected packages
 install_message
