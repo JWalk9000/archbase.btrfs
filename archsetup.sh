@@ -266,7 +266,7 @@ else
 fi
 
 # Install a desktop environment scripts if selected
-if [ $DESKTOP == "true" ]; then
+if [ $DESKTOP_CHOICE == "true" ]; then
     mkdir -p /home/$NEW_USER/firstBoot
     
     FB_FILES=(
@@ -324,7 +324,7 @@ info_print "                 Base system installation complete."
 info_print "                           Next steps:"
 info_print " "
 info_print "                    1) Reboot into the new system."
-info_print "  2) If you chose to install a desktop you can run ${INPUT}firstBoot${RESET} once logged in."
+info_print "  2) If you chose to install a desktop you can run ${INPUT}firstBoot${INFO} once logged in."
 info_print "============================================================================"
 
 read -rp "Please remove the boot media and press [Enter] to reboot..."
