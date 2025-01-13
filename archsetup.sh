@@ -197,7 +197,7 @@ fi
 install_message
 info_print "=> Installing base system with $KERNEL_PKG and essential packages"
 sleep 1
-pacstrap /mnt base $KERNEL_PKG $MICROCODE linux-firmware btrfs-progs base-devel git curl nano openssh networkmanager pciutils usbutils $USERPKGS
+pacstrap /mnt base $KERNEL_PKG $MICROCODE linux-firmware btrfs-progs base-devel git curl nano openssh networkmanager pciutils usbutils $EFIBOOTMGR $USERPKGS
 if $user_packages; then
   pacstrap /mnt $USERPKGS
 fi
@@ -274,20 +274,27 @@ fi
 # Install a desktop environment scripts if selected
 if [ $DESKTOP_CHOICE == "true" ]; then
   mkdir -p /home/$NEW_USER/firstBoot
-    
+  info_print "=> Installing firstBoot scripts"
+  sleep 1
   FB_FILES=(
     "firstBoot.sh"
-    "gui_options.yml"
+    "gui_options.json"
     "install_yay.sh"
     "disable-autologin.sh"
   )
+  info_print "=> Downloading and installing firstBoot scripts"
+  sleep 1
   for FILE in "${FB_FILES[@]}"; do 
     curl -s "$RAW_GITHUB/$REPO/firstBoot/$FILE" | sed "s/user_placeholder/$NEW_USER/g" > /home/$NEW_USER/firstBoot/$FILE
     done
-
+    info_print "=> Setting permissions for firstBoot scripts"
+    sleep 1
   for FILE in "${FB_FILES[@]}"; do
     chmod +x /home/$NEW_USER/firstBoot/$FILE
   done
+  info_print "=> checking that the firstBoot directory was populated"
+  ls -l /home/$NEW_USER/firstBoot
+  sleep 3
 
   # Change ownership to the new user
   chown -R $NEW_USER:$NEW_USER /home/$NEW_USER/firstBoot

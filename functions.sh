@@ -356,6 +356,7 @@ gpu_drivers() {
 choose_bootloader() {
   display_header
   if [ -d /sys/firmware/efi/efivars ]; then
+    EFIBOOTMGR="efibootmgr"
     info_print "=> EFI system detected. Choose a bootloader to install:"
     choices_print " * 1)"" GRUB"
     choices_print "   2)"" systemd-boot"
