@@ -289,7 +289,6 @@ if [ $DESKTOP_CHOICE == "true" ]; then
   FB_FILES=(
     "firstBoot.sh"
     "gui_options.json"
-    "install_yay.sh"
     "disable-autologin.sh"
   )
   info_print "=> Downloading and installing firstBoot scripts"
@@ -320,9 +319,9 @@ fi
 if [ $AUTOLOGIN_CHOICE == "true" ]; then
   mkdir -p /mnt/etc/systemd/system/getty@tty1.service.d
   cat <<EOL > /mnt/etc/systemd/system/getty@tty1.service.d/override.conf
-    "[Service]" 
-    "ExecStart=" 
-    "ExecStart=-/usr/bin/agetty --autologin $NEW_USER --noclear %I \$TERM" 
+  [Service]
+  ExecStart= 
+  ExecStart=-/usr/bin/agetty --autologin $NEW_USER --noclear %I \$TERM
 EOL
 fi
 

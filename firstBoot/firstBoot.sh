@@ -3,50 +3,74 @@ set -e
 
 RAW_GITHUB="https://raw.githubusercontent.com"
 REPO="jwalk9000/archbase.btrfs/main"
-USER="user_placeholder"
+LOCALREPO=/home/$USER/firstBoot
 
-sleep 15
+USER=$(whoami)
+export USER
 
-# Ensure yq is installed
-pacman -S --noconfirm jq
+# Ask for sudo privileges
+if [ "$EUID" -ne 0 ]; then
+  info_print "This script requires sudo privileges. Please enter your password."
+  sudo -v
+fi
 
-# Define colors
-GREEN='\033[0;32m'
-RED='\033[0;31m'
-NC='\033[0m' # No Color
+source <(curl -s $RAW_GITHUB/$REPO/functions.sh)
+source <(curl -s $RAW_GITHUB/$REPO/colors.sh)
 
-# Function to display the header
-display_header() {
-  clear
-  echo -e "${GREEN}"
-  cat <<"EOF"
 
-     __                     _  _      ___    ___    ___    ___  
-     \ \  __      __  __ _ | || | __ / _ \  / _ \  / _ \  / _ \ 
-      \ \ \ \ /\ / / / _` || || |/ /| (_) || | | || | | || | | |
-   /\_/ /  \ V  V / | (_| || ||   <  \__, || |_| || |_| || |_| |
-   \___/    \_/\_/   \__,_||_||_|\_\   /_/  \___/  \___/  \___/ 
-                                                          
-                       GUI Setup                              
-         _____              _           _  _                      
-         \_   \ _ __   ___ | |_   __ _ | || |  ___  _ __         
-          / /\/| '_ \ / __|| __| / _` || || | / _ \| '__|        
-       /\/ /_  | | | |\__ \| |_ | (_| || || ||  __/| |           
-       \____/  |_| |_||___/ \__| \__,_||_||_| \___||_|     
-
-EOF
-  echo -e "${NC}"
-  echo -e "
-  Welcome to the first boot setup script.
-  This script will guide you through the setup process.
-  "
+# Install Yay AUR helper(function)
+install_yay() {
+  info_print "=> Installing Yay"
+  git clone https://aur.archlinux.org/yay.git
+  cd yay
+  makepkg -si --noconfirm
+  cd ..
+  rm -rf yay
+  info_print "Yay installation complete."
 }
 
-# Display the header at the start
+#disable autologin (function)
+disable_autologin() {
+  info_print "=> Disabling autologin"
+  rm /etc/systemd/system/getty@tty1.service.d/override.conf
+  systemctl daemon-reload
+  systemctl restart getty@tty1
+  systemctl disable disable-autologin.service
+  info_print "Autologin has been disabled."
+}
+
+PKGDEPS=(
+  "jq" 
+  "fzf"
+)
+sudo pacman -Sy
+
+info_print "=> Installing script dependencies"
+for PKG in "${PKGDEPS[@]}"; do
+  if ! sudo pacman -Qs "$PKG" > /dev/null ; then
+    sudo pacman -S --noconfirm "$PKG"
+  fi
+done
+
+
+# Display the header, warning and greeting at the start
 display_header
+info_print "Welcome to the first boot setup script. This script will guide you through the setup process."
+banner_print "This is the First Boot Setup, where you can install optional GUI setups from a prepopulated .json file. 
+These are not my scripts, however I do plan on adding my own here too. I will do my best to pre-vet 
+these scripts, however, it is always in your best interest to know and understand any script before running it."
+echo ""
+warning_print "Please be aware that these scripts are not mine, and I cannot guarantee their safety. Procede with caution."
+
+
+# Check for the GUI options JSON file locally, if not available, download it
+GUI_OPTIONS_JSON="/home/$NEW_USER/firstBoot/gui_options.json"
+if [ ! -f "$GUI_OPTIONS_JSON" ]; then
+  info_print "=> Downloading gui_options.json from the repository"
+  curl -s "$RAW_GITHUB/$REPO/firstBoot/gui_options.json" -o "$GUI_OPTIONS_JSON"
+fi
 
 # Read GUI options from JSON file
-GUI_OPTIONS_JSON="/home/$USER/firstBoot/gui_options.json"
 declare -A gui_options
 
 while IFS= read -r line; do
@@ -64,16 +88,16 @@ select gui_choice in "${options[@]}"; do
   if [[ "$gui_choice" == "None" ]]; then
     read -rp "Would you like to install Yay (AUR helper)? (y/N): " INSTALL_YAY
     if [[ "$INSTALL_YAY" =~ ^([yY][eE][sS]|[yY])$ ]]; then
-      bash <(curl -s "$RAW_GITHUB/$REPO/install_yay.sh")
+      install
     fi
     echo "Skipping GUI installation."
     break
   elif [[ -n "${gui_options[$gui_choice]}" ]]; then
     repo=$(echo "${gui_options[$gui_choice]}" | awk '{print $1}')
     installer=$(echo "${gui_options[$gui_choice]}" | awk '{print $2}')
-    bash <(curl -s "$RAW_GITHUB/$REPO/install_yay.sh")
+    install_yay
     echo "Installing $gui_choice..."
-    git clone "$repo" /tmp/gui_repo
+    git clone "$repo" /home/$USER/firstBoot/gui_repo
     bash /tmp/gui_repo/"$installer"
     break
   else
@@ -82,5 +106,14 @@ select gui_choice in "${options[@]}"; do
 done
 
 # Final steps
-echo "First boot setup complete. The system will now reboot."
-reboot
+Yn_print "Would you like to dissable auto login now?"
+read -rp "" AUTOLOGIN_CHOICE
+if [ $AUTOLOGIN_CHOICE == "y" ]; then
+  disable_autologin
+fi
+
+Yn_print "firstBoot setup complete. woudl you like to reboot now?"
+read -rp "" REBOOT_CHOICE
+if [ $REBOOT_CHOICE == "y" ]; then
+  reboot
+fi
