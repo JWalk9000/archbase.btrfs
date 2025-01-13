@@ -5,6 +5,9 @@ RAW_GITHUB="https://raw.githubusercontent.com"
 REPO="jwalk9000/archbase.btrfs/main"
 LOCALREPO=/home/$USER/firstBoot
 
+source <(curl -s $RAW_GITHUB/$REPO/functions.sh)
+source <(curl -s $RAW_GITHUB/$REPO/colors.sh)
+
 USER=$(whoami)
 export USER
 
@@ -14,8 +17,6 @@ if [ "$EUID" -ne 0 ]; then
   sudo -v
 fi
 
-source <(curl -s $RAW_GITHUB/$REPO/functions.sh)
-source <(curl -s $RAW_GITHUB/$REPO/colors.sh)
 
 
 # Install Yay AUR helper(function)
