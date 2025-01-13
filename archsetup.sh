@@ -323,15 +323,15 @@ fi
 
 EOF
 
-#if [ "$DESKTOP" == "true" ]; then
-#  arch-chroot /mnt /bin/bash -c "bash <(curl -s $RAW_GITHUB/$REPO/de-setup.sh)"
+if [ "$DESKTOP_CHOICE" == "true" ]; then
+  arch-chroot /mnt /bin/bash -c "bash <(curl -s $RAW_GITHUB/$REPO/de-setup.sh)"
 
-if [ "$DESKTOP" == "true" ]; then
-  curl -s "$RAW_GITHUB/$REPO/setup_desktop.sh" -o /mnt/setup_desktop.sh
-  sed -i "s/user/$NEW_USER/g" /mnt/setup_desktop.sh
-  arch-chroot /mnt bash /setup_desktop.sh
-  rm /mnt/setup_desktop.sh
-fi
+#if [ "$DESKTOP" == "true" ]; then
+#  curl -s "$RAW_GITHUB/$REPO/setup_desktop.sh" -o /mnt/setup_desktop.sh
+#  sed -i "s/user_placeholder/$NEW_USER/g" /mnt/setup_desktop.sh
+#  arch-chroot /mnt bash /setup_desktop.sh
+#  rm /mnt/setup_desktop.sh
+#fi
 
 # Unmount the partitions
 display_header
