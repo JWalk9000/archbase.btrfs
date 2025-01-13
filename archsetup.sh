@@ -308,6 +308,11 @@ if [ -n "$INSTALL_GPU_DRIVERS" ] && [ "$INSTALL_GPU_DRIVERS" != "false" ]; then
   pacman -S --noconfirm $INSTALL_GPU_DRIVERS
 fi
 
+
+
+
+
+
 # Enable automatic login for the new user
 if [ $AUTOLOGIN_CHOICE == "true" ]; then
   mkdir -p /etc/systemd/system/getty@tty1.service.d
