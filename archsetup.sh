@@ -31,7 +31,6 @@ done
 #                                                   #
 #####################################################
 
-
 HOSTNAME=""
 ROOT_PASS=""
 NEW_USER=""
@@ -290,7 +289,7 @@ if [ $DESKTOP == "true" ]; then
     
     # Add the firstBoot scrip to the system path
     echo "export PATH=$PATH:/home/$NEW_USER/firstBoot" >> /home/$NEW_USER/.bashrc
-
+fi
 
 # Install GPU drivers if selected
 if [ -n "$INSTALL_GPU_DRIVERS" ] && [ "$INSTALL_GPU_DRIVERS" != "false" ]; then
@@ -299,14 +298,16 @@ fi
 
 # Enable automatic login for the new user
 if [ $AUTOLOGIN_CHOICE == "true" ]; then
-  mkdir -p /mnt/etc/systemd/system/getty@tty1.service.d
-  cat <<EOL > /etc/systemd/system/getty@tty1.service.d/override.conf
-  [Service]
-  ExecStart=
-  ExecStart=-/usr/bin/agetty --autologin $NEW_USER --noclear %I \$TERM
+  mkdir -p /etc/systemd/system/getty@tty1.service.d
+  {
+    echo "[Service]" 
+    echo "ExecStart=" 
+    echo "ExecStart=-/usr/bin/agetty --autologin $NEW_USER --noclear %I \$TERM" 
+  } > /etc/systemd/system/getty@tty1.service.d/override.conf
+  systemctl daemon-reload
+
 fi
 
-systemctl daemon-reload
 
 EOF
 
