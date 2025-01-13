@@ -316,10 +316,8 @@ if [ $AUTOLOGIN_CHOICE == "true" ]; then
     echo "ExecStart=" 
     echo "ExecStart=-/usr/bin/agetty --autologin $NEW_USER --noclear %I \$TERM" 
   } > /etc/systemd/system/getty@tty1.service.d/override.conf
-  systemctl daemon-reload
-
+  #systemctl daemon-reload
 fi
-
 
 EOF
 
