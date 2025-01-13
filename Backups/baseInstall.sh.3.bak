@@ -121,7 +121,7 @@ arch-chroot /mnt /bin/bash -c "bash <(curl -s $RAW_GITHUB/$REPO/chrootSetup.sh)"
 
 # 12. Unmount and reboot
 display_header
-echo "=> Unmounting new installation"
+info_print "=> Unmounting new installation"
 sleep 1.5
 umount -R /mnt
 
