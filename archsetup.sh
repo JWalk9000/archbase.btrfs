@@ -309,8 +309,8 @@ if [ $DESKTOP_CHOICE == "true" ]; then
 # Change ownership to the new user
   chown -R $NEW_USER:$NEW_USER /mnt/home/$NEW_USER/firstBoot
   
-# Add the firstBoot scrip to the system path
-  echo "export PATH=$PATH:/home/$NEW_USER/firstBoot" >> /mnt/home/$NEW_USER/.bashrc
+# Add the firstBoot script to the system path
+  echo "export PATH=\$PATH:/home/$NEW_USER/firstBoot" >> /mnt/home/$NEW_USER/.bashrc
 fi
 
 
