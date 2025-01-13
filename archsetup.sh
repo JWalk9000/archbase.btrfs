@@ -307,7 +307,9 @@ if [ $DESKTOP_CHOICE == "true" ]; then
   sleep 3
 
 # Change ownership to the new user
-  chown -R $NEW_USER:$NEW_USER /mnt/home/$NEW_USER/firstBoot
+  #chown -R $NEW_USER:$NEW_USER /mnt/home/$NEW_USER/firstBoot
+ arch-chroot /mnt chown -R $NEW_USER:$NEW_USER /home/$NEW_USER/firstBoot
+
   
 # Add the firstBoot script to the system path
   echo "export PATH=\$PATH:/home/$NEW_USER/firstBoot" >> /mnt/home/$NEW_USER/.bashrc
