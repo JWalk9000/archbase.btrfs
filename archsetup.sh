@@ -233,6 +233,7 @@ echo "root:$ROOT_PASS" | chpasswd
 # Create the new user
 if [ $SUDO_GROUP == "true" ]; then
   useradd -m -G wheel -s /bin/bash $NEW_USER
+  echo "$NEW_USER ALL=(ALL) ALL" > /etc/sudoers.d/$NEW_USER
 else
   useradd -m -s /bin/bash $NEW_USER
 fi
@@ -272,28 +273,27 @@ fi
 
 # Install a desktop environment scripts if selected
 if [ $DESKTOP_CHOICE == "true" ]; then
-    mkdir -p /home/$NEW_USER/firstBoot
+  mkdir -p /home/$NEW_USER/firstBoot
     
-    FB_FILES=(
-      "firstBoot.sh"
-      "gui_options.yml"
-      "install_yay.sh"
-      "disable-autologin.sh"
-
-    )
-    for FILE in "${FB_FILES[@]}"; do 
-      curl -s "$RAW_GITHUB/$REPO/firstBoot/$FILE" | sed "s/user_placeholder/$NEW_USER/g" > /home/$NEW_USER/firstBoot/$FILE
-      done
-
-    for FILE in "${FB_FILES[@]}"; do
-      chmod +x /home/$NEW_USER/firstBoot/$FILE
+  FB_FILES=(
+    "firstBoot.sh"
+    "gui_options.yml"
+    "install_yay.sh"
+    "disable-autologin.sh"
+  )
+  for FILE in "${FB_FILES[@]}"; do 
+    curl -s "$RAW_GITHUB/$REPO/firstBoot/$FILE" | sed "s/user_placeholder/$NEW_USER/g" > /home/$NEW_USER/firstBoot/$FILE
     done
 
-    # Change ownership to the new user
-    chown -R $NEW_USER:$NEW_USER /home/$NEW_USER/firstBoot
-    
-    # Add the firstBoot scrip to the system path
-    echo "export PATH=$PATH:/home/$NEW_USER/firstBoot" >> /home/$NEW_USER/.bashrc
+  for FILE in "${FB_FILES[@]}"; do
+    chmod +x /home/$NEW_USER/firstBoot/$FILE
+  done
+
+  # Change ownership to the new user
+  chown -R $NEW_USER:$NEW_USER /home/$NEW_USER/firstBoot
+  
+  # Add the firstBoot scrip to the system path
+  echo "export PATH=$PATH:/home/$NEW_USER/firstBoot" >> /home/$NEW_USER/.bashrc
 fi
 
 # Install GPU drivers if selected

@@ -479,7 +479,8 @@ autologin_setup() {
     
 desktop_environment() {
   display_header
-  Yn_print " would you like to enable the desktop environment install script as a command?"
+  echo -e "${BWARNING}[EXPERIMENTAL]${RESET}"
+  Yn_print "Would you like to enable the desktop environment install script as a command?"
   read -rp "" DESKTOP_CHOICE
   if [[ "$DESKTOP_CHOICE" =~ ^([yY][eE][sS]|[yY])$ ]]; then
     DESKTOP_CHOICE="true"    
