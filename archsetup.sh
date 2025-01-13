@@ -289,7 +289,6 @@ if [ $DESKTOP_CHOICE == "true" ]; then
   FB_FILES=(
     "firstBoot.sh"
     "gui_options.json"
-    "disable-autologin.sh"
   )
   info_print "=> Downloading and installing firstBoot scripts"
   sleep 1

@@ -3,7 +3,7 @@ set -e
 
 RAW_GITHUB="https://raw.githubusercontent.com"
 REPO="jwalk9000/archbase.btrfs/main"
-LOCALREPO=/home/$USER/firstBoot
+TMPLOCALREPO=/home/$USER/firstBoot/gui_repo
 
 source <(curl -s $RAW_GITHUB/$REPO/functions.sh)
 source <(curl -s $RAW_GITHUB/$REPO/colors.sh)
@@ -15,6 +15,13 @@ export USER
 if [ "$EUID" -ne 0 ]; then
   info_print "This script requires sudo privileges. Please enter your password."
   sudo -v
+fi
+
+# Check If Yay is installed
+if ! pacman -Qs yay > /dev/null ; then
+  IS_YA=0
+else
+  IS_YA=1 
 fi
 
 # Install Yay AUR helper(function)
@@ -31,10 +38,10 @@ install_yay() {
 #disable autologin (function)
 disable_autologin() {
   info_print "=> Disabling autologin"
-  rm /etc/systemd/system/getty@tty1.service.d/override.conf
-  systemctl daemon-reload
-  systemctl restart getty@tty1
-  systemctl disable disable-autologin.service
+  sudo rm /etc/systemd/system/getty@tty1.service.d/override.conf
+  sudo systemctl daemon-reload
+  sudo systemctl restart getty@tty1
+  sudo systemctl disable disable-autologin.service
   info_print "Autologin has been disabled."
 }
 
@@ -55,15 +62,17 @@ done
 # Display the header, warning and greeting at the start
 display_header
 info_print "Welcome to the first boot setup script. This script will guide you through the setup process."
+echo ""
 banner_print "This is the First Boot Setup, where you can install optional GUI setups from a prepopulated .json file. 
 These are not my scripts, however I do plan on adding my own here too. I will do my best to pre-vet 
 these scripts, however, it is always in your best interest to know and understand any script before running it."
 echo ""
 warning_print "Please be aware that these scripts are not mine, and I cannot guarantee their safety. Procede with caution."
+echo ""
 
 
 # Check for the GUI options JSON file locally, if not available, download it
-GUI_OPTIONS_JSON="/home/$NEW_USER/firstBoot/gui_options.json"
+GUI_OPTIONS_JSON="/home/$USER/firstBoot/gui_options.json"
 if [ ! -f "$GUI_OPTIONS_JSON" ]; then
   info_print "=> Downloading gui_options.json from the repository"
   curl -s "$RAW_GITHUB/$REPO/firstBoot/gui_options.json" -o "$GUI_OPTIONS_JSON"
@@ -85,22 +94,29 @@ PS3="Enter the number corresponding to your choice: "
 options=("${!gui_options[@]}" "None")
 select gui_choice in "${options[@]}"; do
   if [[ "$gui_choice" == "None" ]]; then
-    read -rp "Would you like to install Yay (AUR helper)? (y/N): " INSTALL_YAY
-    if [[ "$INSTALL_YAY" =~ ^([yY][eE][sS]|[yY])$ ]]; then
-      install
-    fi
-    echo "Skipping GUI installation."
+    if [ $IS_YA -eq 0 ]; then
+      read -rp "Would you like to install Yay (AUR helper)? (y/N): " INSTALL_YAY
+      if [[ "$INSTALL_YAY" =~ ^([yY][eE][sS]|[yY])$ ]]; then
+        install_yay
+      fi    
+    fi  
+    info_print "Skipping GUI installation."
     break
   elif [[ -n "${gui_options[$gui_choice]}" ]]; then
     repo=$(echo "${gui_options[$gui_choice]}" | awk '{print $1}')
     installer=$(echo "${gui_options[$gui_choice]}" | awk '{print $2}')
-    install_yay
-    echo "Installing $gui_choice..."
-    git clone "$repo" /home/$USER/firstBoot/gui_repo
-    bash /tmp/gui_repo/"$installer"
+    if [ $IS_YA -eq 0 ]; then
+      install_yay
+    fi
+    display_header
+    info_print "Yay has been installed."
+    echo ""
+    info_print "Installing $gui_choice..."
+    git clone "$repo" $TMPLOCALREPO
+    bash $TMPLOCALREPO/"$installer"
     break
   else
-    echo "Invalid option. Please try again."
+    info_print "Invalid option. Please try again."
   fi
 done
 
