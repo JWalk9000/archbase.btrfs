@@ -17,8 +17,6 @@ if [ "$EUID" -ne 0 ]; then
   sudo -v
 fi
 
-
-
 # Install Yay AUR helper(function)
 install_yay() {
   info_print "=> Installing Yay"
