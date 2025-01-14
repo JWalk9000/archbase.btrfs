@@ -195,8 +195,10 @@ fi
 
 # Install the base system and user-selected packages
 install_message
-info_print "=> Installing base system with $KERNEL_PKG and essential packages"
+info_print "=> Installing base system with $KERNEL_PKG, essential packages ad any additional packages"
 sleep 1
+info_print "=> Installing base $KERNEL_PKG $MICROCODE linux-firmware btrfs-progs base-devel git curl nano openssh networkmanager pciutils usbutils $EFIBOOTMGR $USERPKGS $INSTALL_GPU_DRIVERS"
+read -p "Press enter to continue"
 pacstrap /mnt base $KERNEL_PKG $MICROCODE linux-firmware btrfs-progs base-devel git curl nano openssh networkmanager pciutils usbutils $EFIBOOTMGR $USERPKGS $INSTALL_GPU_DRIVERS
 
 # Generate the fstab file
