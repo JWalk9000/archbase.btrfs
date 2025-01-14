@@ -53,6 +53,16 @@ DESKTOP_CHOICE=""           # 'true' or blank
 AUTOLOGIN_CHOICE=""         # 'true' or blank
 
 
+########################################
+# Enable other services here if needed #
+########################################
+ENABLE_SVCS=(
+  "NetworkManager"
+  "sshd"
+  #"sddm"   # example exra service
+)
+
+
 
 # Display the header at the start
 display_header
@@ -259,9 +269,7 @@ echo "$NEW_USER:$USER_PASS" | chpasswd
 systemctl enable NetworkManager
 systemctl enable sshd
 
-########################################
-# Enable other services here if needed #
-########################################
+
 
 # Install the bootloader
 if [ -d /sys/firmware/efi/efivars ]; then
@@ -287,6 +295,12 @@ else
 fi
 
 EOF
+
+
+# Enable services
+for SVC in "${ENABLE_SVCS[@]}"; do
+  arch-chroot /mnt systemctl enable "$SVC"
+done
 
 #Install a desktop environment scripts if selected
 if [ $DESKTOP_CHOICE == "true" ]; then
