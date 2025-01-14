@@ -316,6 +316,7 @@ gpu_drivers() {
       INSTALL_GPU_DRIVERS="nvidia nvidia-utils"
     else
       info_print "=> Skipping NVIDIA driver installation"
+      INSTALL_GPU_DRIVERS=""
       sleep 1.5
     fi
   # Check for AMD GPU
@@ -327,6 +328,7 @@ gpu_drivers() {
       INSTALL_GPU_DRIVERS="xf86-video-amdgpu"
     else
       info_print "=> Skipping AMD driver installation"
+      INSTALL_GPU_DRIVERS=""
       sleep 1.5
     fi
   # Check for Intel GPU
@@ -338,6 +340,7 @@ gpu_drivers() {
       INSTALL_GPU_DRIVERS="xf86-video-intel"
     else
       info_print "=> Skipping Intel driver installation"
+      INSTALL_GPU_DRIVERS=""
       sleep 1.5
     fi
   else
