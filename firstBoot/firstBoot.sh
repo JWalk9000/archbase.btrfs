@@ -5,6 +5,9 @@ RAW_GITHUB="https://raw.githubusercontent.com"
 REPO="jwalk9000/archbase.btrfs/main"
 TMPLOCALREPO=/home/$USER/firstBoot/gui_repo
 
+# Ensure TMPLOCALREPO is removed if the script exits for any reason.
+trap 'rm -rf "$TMPLOCALREPO"' EXIT  # <-- comment this out for debugging.
+
 source <(curl -s $RAW_GITHUB/$REPO/functions.sh)
 source <(curl -s $RAW_GITHUB/$REPO/colors.sh)
 
