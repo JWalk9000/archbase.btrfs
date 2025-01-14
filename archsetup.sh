@@ -4,6 +4,11 @@ set -e
 RAW_GITHUB="https://raw.githubusercontent.com"
 REPO="jwalk9000/archbase.btrfs/main"
 
+#LOCALREPO=""    # <-- set this to the path of the local repo if you are using locally. DO NOT INCLUDE THE ROOT '/'.
+#if [ $LOCALREPO != "" ]; then  # WIP - this is not yet implemented.
+#  RAW_GITHUB=""
+#  REO=$LOCALREPO
+
 source <(curl -s $RAW_GITHUB/$REPO/functions.sh)
 source <(curl -s $RAW_GITHUB/$REPO/colors.sh)
 
@@ -31,21 +36,21 @@ done
 #                                                   #
 #####################################################
 
-HOSTNAME=""
+HOSTNAME=""                 # Example: "archbase"
 ROOT_PASS=""
-NEW_USER=""
+NEW_USER=""                 # All lowercase, for example: "john"
 USER_PASS=""
-SUDO_GROUP=""
-LOCALE=""
-TIMEZONE=""
-BOOTLOADER=""
+SUDO_GROUP=""               # 'true' or blank
+LOCALE=""                   # Example: "en_US.UTF-8"
+TIMEZONE=""                 # Example: "America/New_York"
+BOOTLOADER="grub"           # 'grub' 'systemd-boot' or 'rEFInd'
 
-MICROCODE=""
-KERNEL_PKG=""
-INSTALL_DISK=""
-INSTALL_GPU_DRIVERS=false
-DESKTOP_CHOICE=""
-AUTOLOGIN_CHOICE=""
+MICROCODE=""                # 'intel-ucode' 'amd-ucode' or blank
+KERNEL_PKG=""               # on of: 'linux' 'linux-lts' 'linux-hardened' 'linux-zen'
+INSTALL_DISK=""             # Example: "/dev/sda"
+INSTALL_GPU_DRIVERS=""      # 'true' or blank
+DESKTOP_CHOICE=""           # 'true' or blank 
+AUTOLOGIN_CHOICE=""         # 'true' or blank
 
 
 
@@ -197,8 +202,8 @@ fi
 install_message
 info_print "=> Installing base system with $KERNEL_PKG, essential packages ad any additional packages"
 sleep 1
-info_print "=> Installing base $KERNEL_PKG $MICROCODE linux-firmware btrfs-progs base-devel git curl nano openssh networkmanager pciutils usbutils $EFIBOOTMGR $USERPKGS $INSTALL_GPU_DRIVERS"
-read -p "Press enter to continue"
+#info_print "=> Installing base $KERNEL_PKG $MICROCODE linux-firmware btrfs-progs base-devel git curl nano openssh networkmanager pciutils usbutils $EFIBOOTMGR $USERPKGS $INSTALL_GPU_DRIVERS"  # These two lines are for troubleshooting package installation.
+#read -p "Press enter to continue"
 pacstrap /mnt base $KERNEL_PKG $MICROCODE linux-firmware btrfs-progs base-devel git curl nano openssh networkmanager pciutils usbutils $EFIBOOTMGR $USERPKGS $INSTALL_GPU_DRIVERS
 
 # Generate the fstab file
