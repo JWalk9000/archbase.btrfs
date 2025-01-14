@@ -358,15 +358,15 @@ choose_bootloader() {
     info_print "=> EFI system detected. Choose a bootloader to install:"
     choices_print " * 1)"" GRUB"
     choices_print "   2)"" systemd-boot"
-    choices_print "   3)"" rEFInd"
+    #choices_print "   3)"" rEFInd"
     select_print "1" "3" "Bootloader" "BOOTLOADER_CHOICE"
     case "$BOOTLOADER_CHOICE" in
       2)
         BOOTLOADER="systemd-boot"
         ;;
-      3)
-        BOOTLOADER="rEFInd"
-        ;;
+      #3)
+      #  BOOTLOADER="rEFInd"
+      #  ;;
       *)
         BOOTLOADER="grub"
         ;;
