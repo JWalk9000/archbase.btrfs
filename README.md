@@ -12,13 +12,13 @@ Whether you're looking to use this script as-is, fork it for personal use, or mo
 
 ## Features
 
-    - BTRFS file system, with root, home, and snapshots subvolumes.
-    - Install to either BIOS or EFI systems.
-    - Select your preferred Linux Kernel.
-    - Root and User Credential setup, and auto-login option.
-    - Optional GPU packages.
-    - Optional user define package list, both premade and during the installer.
-    - Boot manager options for EFI systems. ( only bash is working right now, issues with BTRFS subvolumes)
+- BTRFS file system, with root, home, and snapshots subvolumes.
+- Install to either BIOS or EFI systems.
+- Select your preferred Linux Kernel.
+- Root and User Credential setup, and auto-login option.
+- Optional GPU packages.
+- Optional user define package list, both premade and during the installer.
+- Boot manager options for EFI systems. ( only bash is working right now, issues with BTRFS subvolumes)
 
 ## Running As-Is
 
