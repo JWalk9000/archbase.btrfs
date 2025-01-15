@@ -23,9 +23,9 @@ Whether you're looking to use this script as-is, fork it for personal use, or mo
 ## Running As-Is
 
 ### Prerequisites
-    - A bootable Arch Linux install ISO, version 2025.01.01 or later. (It may work with earlier ISOs, but I had issues with expired certs for different things from the previous 2 releases)
-    - A stable internet connection.
-    - A target disk for installation (Currently uses the entire target disk, all data will be erased).
+- A bootable Arch Linux install ISO, version 2025.01.01 or later. (It may work with earlier ISOs, but I had issues with expired certs for different things from the previous 2 releases)
+- A stable internet connection.
+- A target disk for installation (Currently uses the entire target disk, all data will be erased).
 
 ### Running the Script As-Is
 
