@@ -71,3 +71,16 @@ kate neofetch kitty htop sddm xfce
 ```
 
 I would strongly suggest that if you are installing a DE from the gui_options.json that you dont install anything extra, not even the gpu drivers. The only exception to this might be sddm, as your greeter, some of the DE install scripts have it and skip installing if it is already on the system however most don't seem to include it. You can always leave it out and install and enable it after the fact if you choose to.
+
+
+## Contributing
+
+Contributions are welcome! If you have suggestions for improvements or new features, feel free to open an issue or submit a pull request.
+
+## License
+
+This project is licensed under the MIT License. See the LICENSE file for details.
+
+## Acknowledgements
+
+Special thanks to the Arch Linux community for their extensive documentation, Stephan Raabe(My-Linux-4-Work) who's setup scripts were the initial inspiration for me to start this project, and all others who openly share their setup scripts to be used and shared.

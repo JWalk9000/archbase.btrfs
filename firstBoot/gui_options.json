@@ -1,6 +1,6 @@
 [
   {
-    "name": "ML4W Hyperland-Full",
+    "name": "ML4W Hyperland-Full (AMD GPU ONLY!!)",
     "repo": "https://github.com/mylinuxforwork/dotfiles",
     "installer": "setup-arch.sh"
   },

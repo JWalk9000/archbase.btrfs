@@ -32,7 +32,9 @@ install_yay() {
   info_print "=> Installing Yay"
   git clone https://aur.archlinux.org/yay.git
   cd yay
+  trap 'cd .. && rm -rf yay' EXIT # cleanup if script exits for any reason
   makepkg -si --noconfirm
+  trap - EXIT # remove the trap
   cd ..
   rm -rf yay
   info_print "Yay installation complete."
