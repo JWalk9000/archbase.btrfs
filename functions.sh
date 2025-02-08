@@ -205,12 +205,43 @@ choose_kernel() {
 }
 
 # Install user-specified packages (function).
+verify_packages() {
+  VERIFIED_PKGS=""
+  for PKG in $USERPKGS; do
+    if ! pacman -Si "$PKG" > /dev/null; then
+      warning_print "Package $PKG not found in the repositories."
+      Yn_print "Would you like to change the spelling?"
+      read -rp "" CHANGE_SPELLING
+      if [[ "$CHANGE_SPELLING" =~ ^([yY][eE][sS]|[yY])$ ]]; then
+        read -rp "Enter the correct package name: " FIXPKG
+        if pacman -Si "$FIXPKG" > /dev/null; then
+          VERIFIED_PKGS="$VERIFIED_PKGS $FIXPKG"
+        else
+          warning_print "Package $FIXPKG not found in the repositories."
+          Yn_print "Would you like to try again?"
+          read -rp "" TRY_AGAIN
+          if [[ "$TRY_AGAIN" =~ ^([yY][eE][sS]|[yY])$ ]]; then
+            continue
+          else
+            break
+          fi
+        fi
+      else
+        continue
+      fi
+    else
+      VERIFIED_PKGS="$VERIFIED_PKGS $PKG"
+    fi
+  done
+}
+
 user_packages() {
   display_header
   info_print "By default, in addition to the base system this installer will also install the following packages:"
   for PKG in "${BASE_PKGS[@]}"; do
     info_print "  - $PKG"
   done
+
   Yn_print "Did you create a userpkgs.txt file with optional packages to install?"
   read -rp "" USERPKGS_FILE
   if [[ "$USERPKGS_FILE" =~ ^([yY][eE][sS]|[yY])$ ]]; then
@@ -236,41 +267,12 @@ user_packages() {
     Yn_print "Would you like to enter the packages manually as a space-separated list?"
     read -rp "" ENTER_MANUALLY
     if [[ "$ENTER_MANUALLY" =~ ^([yY][eE][sS]|[yY])$ ]]; then
-      while true; do
-        info_print "Enter the packages you would like to install, separated by a space:"
-        read -rp "" USERPKGS
-        info_print "I will now check that those packages are available to install."
-        sleep 1
-        VERIFIED_PKGS=""
-        for PKG in $USERPKGS; do
-          if ! pacman -Si "$PKG" > /dev/null; then
-            warning_print "Package $PKG not found in the repositories."
-            Yn_print "Would you like to change the spelling?"
-            read -rp "" CHANGE_SPELLING
-            if [[ "$CHANGE_SPELLING" =~ ^([yY][eE][sS]|[yY])$ ]]; then
-              read -rp "Enter the correct package name: " FIXPKG
-              if pacman -Si "$FIXPKG" > /dev/null; then
-                VERIFIED_PKGS="$VERIFIED_PKGS $FIXPKG"
-              else
-                warning_print "Package $FIXPKG not found in the repositories."
-                Yn_print "Would you like to try again?"
-                read -rp "" TRY_AGAIN
-                if [[ "$TRY_AGAIN" =~ ^([yY][eE][sS]|[yY])$ ]]; then
-                  continue
-                else
-                  break
-                fi
-              fi
-            else
-              continue
-            fi
-          else
-            VERIFIED_PKGS="$VERIFIED_PKGS $PKG"
-          fi
-        done
-        USERPKGS=$VERIFIED_PKGS
-        break
-      done
+      info_print "Enter the packages you would like to install, separated by a space:"
+      read -rp "" USERPKGS
+      info_print "I will now check that those packages are available to install."
+      sleep 1
+      verify_packages
+      USERPKGS=$VERIFIED_PKGS
     fi
   fi
 

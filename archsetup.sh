@@ -12,6 +12,13 @@ REPO="jwalk9000/archbase.btrfs/main"
 source <(curl -s $RAW_GITHUB/$REPO/functions.sh)
 source <(curl -s $RAW_GITHUB/$REPO/colors.sh)
 
+# Package lists fo the role options
+ROLE_SERVER=$(curl -s $RAW_GITHUB/$REPO/roles/server.txt)
+ROLE_DESKTOP_KDE=$(curl -s $RAW_GITHUB/$REPO/roles/desktop_kde.txt)
+ROLE_DESKTOP_GNOME=$(curl -s $RAW_GITHUB/$REPO/roles/desktop_gnome.txt)
+ROLE_DESKTOP_HYPR=$(curl -s $RAW_GITHUB/$REPO/roles/desktop_hypr.txt)
+ROLE_CUSTOM=$(curl -s $RAW_GITHUB/$REPO/roles/custom.txt)
+
 # Install script dependencies
 PKGDEPS=(
   "jq" 
