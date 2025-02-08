@@ -1,0 +1,1 @@
+zsh less rsync avahi reflector python tmux btop nginx postgresql samba traefik ansible docker firewalld fail2ban logwatch zip unzip jq fzf tree whois wget rlwrap

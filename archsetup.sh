@@ -45,6 +45,19 @@ LOCALE=""                   # Example: "en_US.UTF-8"
 TIMEZONE=""                 # Example: "America/New_York"
 BOOTLOADER="grub"           # 'grub' 'systemd-boot' or 'rEFInd'
 
+# Example: "base-devel git curl nano openssh networkmanager pciutils usbutils"
+BASE_PKGS="                
+  linux-firmware 
+  btrfs-progs 
+  base-devel 
+  git 
+  curl 
+  nano 
+  openssh 
+  networkmanager 
+  pciutils 
+  usbutils
+  "                
 MICROCODE=""                # 'intel-ucode' 'amd-ucode' or blank
 KERNEL_PKG=""               # on of: 'linux' 'linux-lts' 'linux-hardened' 'linux-zen'
 INSTALL_DISK=""             # Example: "/dev/sda"
@@ -214,7 +227,7 @@ info_print "=> Installing base system with $KERNEL_PKG, essential packages ad an
 sleep 1
 #info_print "=> Installing base $KERNEL_PKG $MICROCODE linux-firmware btrfs-progs base-devel git curl nano openssh networkmanager pciutils usbutils $EFIBOOTMGR $USERPKGS $INSTALL_GPU_DRIVERS"  # These two lines are for troubleshooting package installation.
 #read -p "Press enter to continue"
-pacstrap /mnt base $KERNEL_PKG $MICROCODE linux-firmware btrfs-progs base-devel git curl nano openssh networkmanager pciutils usbutils $EFIBOOTMGR $USERPKGS $INSTALL_GPU_DRIVERS
+pacstrap /mnt base $KERNEL_PKG $MICROCODE $BASE_PKGS $EFIBOOTMGR $USERPKGS $INSTALL_GPU_DRIVERS
 
 # Generate the fstab file
 install_message

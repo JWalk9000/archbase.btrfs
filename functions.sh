@@ -207,14 +207,10 @@ choose_kernel() {
 # Install user-specified packages (function).
 user_packages() {
   display_header
-  info_print "By default, in addition to the base system this installer will also install the following packages:
-  - networkmanager
-  - nano
-  - git
-  - openssh
-  - pciutils
-  - usbutils
-  " 
+  info_print "By default, in addition to the base system this installer will also install the following packages:"
+  for PKG in "${BASE_PKGS[@]}"; do
+    info_print "  - $PKG"
+  done
   Yn_print "Did you create a userpkgs.txt file with optional packages to install?"
   read -rp "" USERPKGS_FILE
   if [[ "$USERPKGS_FILE" =~ ^([yY][eE][sS]|[yY])$ ]]; then
