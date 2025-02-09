@@ -183,8 +183,8 @@ select_timezone() {
 system_role() {
   local ROLE=$1
   
-  ROLE_PKGS=$(yq eval '.roles.$ROLE.packages[]'$YAML_FILE | tr '\n' ' ')
-  ENABLE_SVCS+=$(yq eval '.roles.$ROLE.services[]' $YAML_FILE | tr '\n' ' ')
+  ROLE_PKGS=$(yq e ".roles.$ROLE.packages | join(\" \")" $YAML_FILE)
+  ENABLE_SVCS+=$(yq e ".roles.$ROLE.services | join(\" \")" $YAML_FILE)
   
 }
 
@@ -397,7 +397,7 @@ gpu_drivers() {
 
 # Consolidate all package lists (function).
 package_lists() {
-  BASE_PKGS+=$(yq eval '.base.packages[]' $YAML_FILE | tr '\n' ' ')
+  BASE_PKGS+=$(yq e ".base.packages | join(\" \")" $YAML_FILE)
   SYSTEM_PKGS="$BASE_PKGS $MICROCODE $INSTALL_GPU_DRIVERS $KERNEL_PKG $ROLE_PKGS $USERPKGS"
   for PKGS in $SYSTEM_PKGS; do
     SYSTEM_PKGS=$(echo $SYSTEM_PKGS | tr -s ' ')
