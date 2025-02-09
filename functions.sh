@@ -139,8 +139,8 @@ select_locale() {
   # Use the locale.gen file from the install image
   cp /etc/locale.gen /tmp/locale.gen
 
-  info_print "=> Start typing to search for a locale, press Enter to select."
-  sleep 1
+  info_print "=> Start typing to search for a locale, this uses fuzzy find (for instance: "enust" to find en_US.UTF-8), you can also use "up" and "down" keys, then press Enter to select."
+  sleep 3
   
   # Read the available locales into an array
   mapfile -t locales < <(grep -E '^[#]*[a-z]{2,}_[A-Z]{2,}' /tmp/locale.gen | sed 's/^#//' | awk '{print $1}')
@@ -149,7 +149,7 @@ select_locale() {
   selected_locale=$(printf "%s\n" "${locales[@]}" | fzf --prompt="Search: " --header="Locales available:")
 
   if [[ -n "$selected_locale" ]]; then
-    echo "Selected locale: $selected_locale"
+    info_print "Selected locale: $selected_locale"
     LOCALE="$selected_locale"
   else
     warning_print "No locale selected. Please try again."
@@ -160,7 +160,10 @@ select_locale() {
 # User selects a timezone (function).
 select_timezone() {
   display_header
-  info_print "=> Start typing to search for a timezone, press Enter to select."
+  info_print "=> Start typing to search for a timezone, this uses fuzzy find (for instance: "eulo" to find Europe/London), 
+    you can also use "up" and "down" keys, then press Enter to select."
+  
+  sleep 3
   
   # Read the available timezones into an array
   mapfile -t timezones < <(timedatectl list-timezones)
@@ -169,12 +172,72 @@ select_timezone() {
   selected_timezone=$(printf "%s\n" "${timezones[@]}" | fzf --prompt="Search: " --header="Timezones available:")
 
   if [[ -n "$selected_timezone" ]]; then
-    echo "Selected timezone: $selected_timezone"
+    info_print "Selected timezone: $selected_timezone"
     TIMEZONE="$selected_timezone"
   else
-    echo "No timezone selected."
+    warning_print "No timezone selected."
   fi
 }
+
+# Package and service lists for the role options
+system_role() {
+  local ROLE=$1
+  local YAML_FILE=$(curl -s $RAW_GITHUB/$REPO/roles/roles.yaml)
+  
+  if [ "$ROLE" == "server" ]; then
+    ROLE_PKGS=$(yq eval '.server.packages[]' $YAML_FILE | tr '/n' ' ')
+    ENABLE_SVCS=$ENABLE_SVCS + $(yq eval '.server.services[]' $YAML_FILE | tr '/n' ' ')
+
+  if [ "$ROLE" == "gnome" ]; then
+    ROLE_PKGS=$(yq eval '.desktop.gnome.packages[]' $YAML_FILE | tr '/n' ' ')
+    ENABLE_SVCS=$ENABLE_SVCS + $(yq eval '.desktop.gnome.services[]' $YAML_FILE | tr '/n' ' ')
+  
+  elif [ "$ROLE" == "kde" ]; then
+    ROLE_PKGS=$(yq eval '.desktop.kde.packages[]' $YAML_FILE | tr '/n' ' ')
+    ENABLE_SVCS=$ENABLE_SVCS + $(yq eval '.desktop.kde.services[]' $YAML_FILE | tr '/n' ' ')
+  
+  elif [ "$ROLE" == "xfce" ]; then
+    ROLE_PKGS=$(yq eval '.desktop.xfce.packages[]' $YAML_FILE | tr '/n' ' ')
+    ENABLE_SVCS=$ENABLE_SVCS + $(yq eval '.desktop.xfce.services[]' $YAML_FILE | tr '/n' ' ')
+  
+  elif [ "$ROLE" == "hypr" ]; then
+    ROLE_PKGS=$(yq eval '.desktop.hypr.packages[]' $YAML_FILE | tr '/n' ' ')
+    ENABLE_SVCS=$ENABLE_SVCS + $(yq eval '.desktop.hypr.services[]' $YAML_FILE | tr '/n' ' ')
+  
+  fi
+}
+
+# Choose a role for the system (function).
+choose_role() {
+  display_header
+  info_print "Below are some available system roles to choose from. If you created a userpkgs.txt file, you can skip this step or select a role as well."
+  info_print "=> Select a role:"
+  choices_print "0" ") Skip/Custom"
+  choices_print "1" ") Server ----------------- A basic server setup with some common services aiming at a similar experience to Ubuntu Server."
+  choices_print "2" ") Desktop - XFCE --------- A lightweight desktop environment, similar layout to MS Windows 7."
+  choices_print "3" ") Desktop - KDE Plasma --- A modern, feature-rich desktop environment, similar layout MS Windows 10/11."
+  choices_print "4" ") Desktop - GNOME -------- A modern, feature-rich desktop environment, similar layout to macOS."
+  choices_print "5" ") Desktop - Hyprland ----- A feature-rich, auto-tiling desktop environment. Highly customizable and keyboard-shortcut-driven."
+  select_print "0" "4" "System role: " "SYSTEM_ROLE"
+  case $SYSTEM_ROLE in
+    1)
+      system_role kde
+      return 0;;
+    2)
+      role_desktop gnome
+      return 0;;
+    3)
+      role_desktop hypr
+      return 0;;
+    4)
+      role_server
+      return 0;;
+    *)
+      ROLE_PKGS=""
+      return 0;;
+  esac
+}
+
 
 # Choose a kernel to install (function).
 choose_kernel() {
@@ -184,7 +247,7 @@ choose_kernel() {
   choices_print "2" ") linux-lts: Long-term Support kernel."
   choices_print "3" ") linux-zen: Kernel with the desktop optimizations."
   choices_print "4" ") linux-hardened: a Security-focused kernel."
-  select_print "1" "4" "Kernel choice" KERNEL_CHOICE
+  select_print "1" "4" "Kernel choice: " KERNEL_CHOICE
   case $KERNEL_CHOICE in
     1)
       KERNEL_PKG="linux"

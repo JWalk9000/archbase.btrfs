@@ -1,0 +1,85 @@
+
+roles:
+  base:
+   packages:
+    - linux-firmware 
+    - btrfs-progs 
+    - base-devel 
+    - git 
+    - curl 
+    - nano 
+    - openssh 
+    - networkmanager 
+    - pciutils 
+    - usbutils
+  server:
+    packages:
+      - zsh
+      - less
+      - rsync
+      - avahi
+      - avahi-tools
+      - reflector
+      - python
+      - tmux
+      - btop
+      - nginx
+      - postgresql 
+      - samba 
+      - traefik 
+      - docker 
+      - docker-compose 
+      - firewalld 
+      - fail2ban 
+      - logwatch 
+      - zip 
+      - unzip 
+      - jq 
+      - fzf 
+      - tree 
+      - whois 
+      - wget 
+      - rlwrap
+    services:
+      - avahi-daemon
+      - reflector.timer
+      - docker
+      - firewalld
+      - fail2ban
+      - logwatch
+      - nginx
+      - postgresql
+      - smb
+      - nmb
+      - traefik
+  desktop:
+    kde:
+      packages:
+        - plasma
+        - kde-applications
+        - wayland
+        - dolphin
+        - konsole
+        - sddm
+      services:
+        - sddm
+    gnome:
+      packages:
+        - gnome
+        - gnome-extra
+      services:
+        - gdm
+    xfce:
+      packages:
+        - xfce
+        - xfce-extra
+      services:
+        - lightdm
+    hypr:
+      packages:
+        - hyprland
+        - waybar
+        - kitty
+        - xorg-wayland
+      services:
+        - sddm

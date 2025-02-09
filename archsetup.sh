@@ -7,23 +7,20 @@ REPO="jwalk9000/archbase.btrfs/main"
 #LOCALREPO=""    # <-- set this to the path of the local repo if you are using locally. DO NOT INCLUDE THE ROOT '/'.
 #if [ $LOCALREPO != "" ]; then  # WIP - this is not yet implemented.
 #  RAW_GITHUB=""
-#  REO=$LOCALREPO
+#  REPO=$LOCALREPO 
 
 source <(curl -s $RAW_GITHUB/$REPO/functions.sh)
 source <(curl -s $RAW_GITHUB/$REPO/colors.sh)
+source <(curl -s $RAW_GITHUB/$REPO/roles/roles.yml)
 
-# Package lists fo the role options
-ROLE_SERVER=$(curl -s $RAW_GITHUB/$REPO/roles/server.txt)
-ROLE_DESKTOP_KDE=$(curl -s $RAW_GITHUB/$REPO/roles/desktop_kde.txt)
-ROLE_DESKTOP_GNOME=$(curl -s $RAW_GITHUB/$REPO/roles/desktop_gnome.txt)
-ROLE_DESKTOP_HYPR=$(curl -s $RAW_GITHUB/$REPO/roles/desktop_hypr.txt)
-ROLE_CUSTOM=$(curl -s $RAW_GITHUB/$REPO/roles/custom.txt)
 
 # Install script dependencies
 PKGDEPS=(
-  "jq" 
+  "jq"
+  "yq" 
   "fzf"
 )
+
 pacman -Sy
 
 info_print "=> Installing script dependencies"
@@ -52,19 +49,9 @@ LOCALE=""                   # Example: "en_US.UTF-8"
 TIMEZONE=""                 # Example: "America/New_York"
 BOOTLOADER="grub"           # 'grub' 'systemd-boot' or 'rEFInd'
 
-# Example: "base-devel git curl nano openssh networkmanager pciutils usbutils"
-BASE_PKGS="                
-  linux-firmware 
-  btrfs-progs 
-  base-devel 
-  git 
-  curl 
-  nano 
-  openssh 
-  networkmanager 
-  pciutils 
-  usbutils
-  "                
+
+BASE_PKGS=""                # package list for the base system                
+ROLE_PKGS=""                # package list for the selected role
 MICROCODE=""                # 'intel-ucode' 'amd-ucode' or blank
 KERNEL_PKG=""               # on of: 'linux' 'linux-lts' 'linux-hardened' 'linux-zen'
 INSTALL_DISK=""             # Example: "/dev/sda"
