@@ -220,16 +220,19 @@ choose_role() {
   select_print "0" "4" "System role: " "SYSTEM_ROLE"
   case $SYSTEM_ROLE in
     1)
-      system_role kde
+      system_role server
       return 0;;
     2)
-      role_desktop gnome
+      system_role xfce
       return 0;;
     3)
-      role_desktop hypr
+      system_role kde
       return 0;;
     4)
-      role_server
+      system_role gnome
+      return 0;;
+    5)
+      system_role hypr
       return 0;;
     *)
       ROLE_PKGS=""

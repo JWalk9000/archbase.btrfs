@@ -100,7 +100,7 @@ until choose_kernel; do : ; done
 until microcode_detector; do : ; done
 
 # Select system role
-until system_role; do : ; done
+until choose_role; do : ; done
 
 # Select additional packages to install
 until user_packages; do : ; done
