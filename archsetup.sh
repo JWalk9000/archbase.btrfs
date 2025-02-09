@@ -12,8 +12,8 @@ REPO="jwalk9000/archbase.btrfs/dev"
 source <(curl -s $RAW_GITHUB/$REPO/functions.sh)
 source <(curl -s $RAW_GITHUB/$REPO/colors.sh)
 
-curl -s $RAW_GITHUB/$REPO/roles/roles.yaml > /tmp/roles.yaml
-YAML_FILE="/tmp/roles.yaml"
+curl -s $RAW_GITHUB/$REPO/roles/roles.yml > /tmp/roles.yml
+YAML_FILE="/tmp/roles.yml"
 
 
 # Install script dependencies
