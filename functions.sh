@@ -183,27 +183,9 @@ select_timezone() {
 system_role() {
   local ROLE=$1
   
-  if [ "$ROLE" == "server" ]; then
-    ROLE_PKGS=$(yq eval '.server.packages[]' $YAML_FILE | tr '/n' ' ')
-    ENABLE_SVCS=$ENABLE_SVCS + $(yq eval '.server.services[]' $YAML_FILE | tr '/n' ' ')
+  ROLE_PKGS=$(yq eval '.roles.$ROLE.packages[]' $YAML_FILE | tr '\n' ' ')
+  ENABLE_SVCS=$ENABLE_SVCS += $(yq eval '.roles.$ROLE.services[]' $YAML_FILE | tr '\n' ' ')
   
-  elif [ "$ROLE" == "xfce" ]; then
-    ROLE_PKGS=$(yq eval '.desktop.xfce.packages[]' $YAML_FILE | tr '/n' ' ')
-    ENABLE_SVCS=$ENABLE_SVCS + $(yq eval '.desktop.xfce.services[]' $YAML_FILE | tr '/n' ' ')
-  
-  elif [ "$ROLE" == "kde" ]; then
-    ROLE_PKGS=$(yq eval '.desktop.kde.packages[]' $YAML_FILE | tr '/n' ' ')
-    ENABLE_SVCS=$ENABLE_SVCS + $(yq eval '.desktop.kde.services[]' $YAML_FILE | tr '/n' ' ')
-
-  elif [ "$ROLE" == "gnome" ]; then
-    ROLE_PKGS=$(yq eval '.desktop.gnome.packages[]' $YAML_FILE | tr '/n' ' ')
-    ENABLE_SVCS=$ENABLE_SVCS + $(yq eval '.desktop.gnome.services[]' $YAML_FILE | tr '/n' ' ')
-  
-  elif [ "$ROLE" == "hypr" ]; then
-    ROLE_PKGS=$(yq eval '.desktop.hypr.packages[]' $YAML_FILE | tr '/n' ' ')
-    ENABLE_SVCS=$ENABLE_SVCS + $(yq eval '.desktop.hypr.services[]' $YAML_FILE | tr '/n' ' ')
-  
-  fi
 }
 
 # Choose a role for the system (function).
@@ -273,13 +255,13 @@ choose_kernel() {
 verify_packages() {
   VERIFIED_PKGS=""
   for PKG in $USERPKGS; do
-    if ! pacman -Si "$PKG" > /dev/null; then
+    if ! pacman -Si "$PKG" > /dev\null; then
       warning_print "Package $PKG not found in the repositories."
       Yn_print "Would you like to change the spelling?"
       read -rp "" CHANGE_SPELLING
       if [[ "$CHANGE_SPELLING" =~ ^([yY][eE][sS]|[yY])$ ]]; then
         read -rp "Enter the correct package name: " FIXPKG
-        if pacman -Si "$FIXPKG" > /dev/null; then
+        if pacman -Si "$FIXPKG" > /dev\null; then
           VERIFIED_PKGS="$VERIFIED_PKGS $FIXPKG"
         else
           warning_print "Package $FIXPKG not found in the repositories."
@@ -313,7 +295,7 @@ user_packages() {
     while true; do
       info_print "=> Checking for userpkgs.txt at $RAW_GITHUB/$REPO/userpkgs.txt"
       sleep 1
-      if curl --output /dev/null --silent --head --fail "$RAW_GITHUB/$REPO/userpkgs.txt"; then
+      if curl --output /dev\null --silent --head --fail "$RAW_GITHUB/$REPO/userpkgs.txt"; then
         info_print "=> User's packages list will be installed to the system."
         USERPKGS=$(curl -s "$RAW_GITHUB/$REPO/userpkgs.txt")
         break
@@ -415,7 +397,7 @@ gpu_drivers() {
 
 # Consolidate all package lists (function).
 package_lists() {
-  BASE_PKGS=$BASE_PKGS +$(yq eval '.base.packages[]' $YAML_FILE | tr '/n' ' ')
+  BASE_PKGS=$BASE_PKGS += $(yq eval '.base.packages[]' $YAML_FILE | tr '\n' ' ')
   SYSTEM_PKGS="$BASE_PKGS $MICROCODE $INSTALL_GPU_DRIVERS $KERNEL_PKG $ROLE_PKGS $USERPKGS"
   for PKGS in $SYSTEM_PKGS; do
     SYSTEM_PKGS=$(echo $SYSTEM_PKGS | tr -s ' ')
@@ -482,7 +464,7 @@ unmount_partitions() {
   display_header
   info_print "=> Checking for mounted partitions on $INSTALL_DISK"
   sleep 1
-  while mount | grep "$INSTALL_DISK" >/dev/null; do
+  while mount | grep "$INSTALL_DISK" >/dev\null; do
     # Get the shortest (root-most) mount point for the disk
     local mount_point=$(lsblk -ln -o MOUNTPOINT "$INSTALL_DISK" | grep -v '^$' | sort | head -n 1)
     if [[ -z "$mount_point" ]]; then
