@@ -183,9 +183,19 @@ select_timezone() {
 system_role() {
   local ROLE=$1
   
-  ROLE_PKGS=$(yq e ".roles.$ROLE.packages | join(\" \")" $YAML_FILE)
-  ENABLE_SVCS+=$(yq e ".roles.$ROLE.services | join(\" \")" $YAML_FILE)
+  ROLE_PKGS=$(yq -r ".roles.$ROLE.packages[]" $YAML_FILE | tr '\n' ' ')
+  ENABLE_SVCS+=$(yq -r ".roles.$ROLE.services[]" $YAML_FILE | tr '\n' ' ')
   
+}
+
+
+# Consolidate all package lists (function).
+package_lists() {
+  BASE_PKGS+=$(yq -r '.base.packages[]' $YAML_FILE | tr '\n' ' ')
+  SYSTEM_PKGS="$BASE_PKGS $MICROCODE $INSTALL_GPU_DRIVERS $KERNEL_PKG $ROLE_PKGS $USERPKGS"
+  for PKGS in $SYSTEM_PKGS; do
+    SYSTEM_PKGS=$(echo $SYSTEM_PKGS | tr -s ' ')
+  done
 }
 
 # Choose a role for the system (function).
@@ -199,7 +209,7 @@ choose_role() {
   choices_print "3" ") Desktop - KDE Plasma --- A modern, feature-rich desktop environment, similar layout MS Windows 10/11."
   choices_print "4" ") Desktop - GNOME -------- A modern, feature-rich desktop environment, similar layout to macOS."
   choices_print "5" ") Desktop - Hyprland ----- A feature-rich, auto-tiling desktop environment. Highly customizable and keyboard-shortcut-driven."
-  select_print "0" "4" "System role: " "SYSTEM_ROLE"
+  select_print "0" "5" "System role: " "SYSTEM_ROLE"
   case $SYSTEM_ROLE in
     1)
       system_role server
@@ -395,14 +405,6 @@ gpu_drivers() {
   fi
 }
 
-# Consolidate all package lists (function).
-package_lists() {
-  BASE_PKGS+=$(yq e ".base.packages | join(\" \")" $YAML_FILE)
-  SYSTEM_PKGS="$BASE_PKGS $MICROCODE $INSTALL_GPU_DRIVERS $KERNEL_PKG $ROLE_PKGS $USERPKGS"
-  for PKGS in $SYSTEM_PKGS; do
-    SYSTEM_PKGS=$(echo $SYSTEM_PKGS | tr -s ' ')
-  done
-}
 
 # Choose a bootloader to install (function).
 choose_bootloader() {
