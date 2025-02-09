@@ -2,7 +2,7 @@
 set -e
 
 RAW_GITHUB="https://raw.githubusercontent.com"
-REPO="jwalk9000/archbase.btrfs/refs/heads/dev"
+REPO="jwalk9000/archbase.btrfs/dev"
 
 #LOCALREPO=""    # <-- set this to the path of the local repo if you are using locally. DO NOT INCLUDE THE ROOT '/'.
 #if [ $LOCALREPO != "" ]; then  # WIP - this is not yet implemented.
@@ -11,7 +11,9 @@ REPO="jwalk9000/archbase.btrfs/refs/heads/dev"
 
 source <(curl -s $RAW_GITHUB/$REPO/functions.sh)
 source <(curl -s $RAW_GITHUB/$REPO/colors.sh)
-YAML_FILE=$(curl -s $RAW_GITHUB/$REPO/roles/roles.yaml)
+
+curl -s $RAW_GITHUB/$REPO/roles/roles.yaml > /tmp/roles.yaml
+YAML_FILE="/tmp/roles.yaml"
 
 
 # Install script dependencies
