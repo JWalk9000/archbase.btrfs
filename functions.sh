@@ -188,7 +188,7 @@ system_role() {
     ROLE_PKGS=$(yq eval '.server.packages[]' $YAML_FILE | tr '/n' ' ')
     ENABLE_SVCS=$ENABLE_SVCS + $(yq eval '.server.services[]' $YAML_FILE | tr '/n' ' ')
 
-  if [ "$ROLE" == "gnome" ]; then
+  elif [ "$ROLE" == "gnome" ]; then
     ROLE_PKGS=$(yq eval '.desktop.gnome.packages[]' $YAML_FILE | tr '/n' ' ')
     ENABLE_SVCS=$ENABLE_SVCS + $(yq eval '.desktop.gnome.services[]' $YAML_FILE | tr '/n' ' ')
   
