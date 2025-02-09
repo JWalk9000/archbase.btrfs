@@ -1,17 +1,19 @@
+base:
+ packages:
+  - base
+  - linux-firmware 
+  - btrfs-progs 
+  - base-devel 
+  - git 
+  - curl 
+  - nano 
+  - openssh 
+  - networkmanager 
+  - pciutils 
+  - usbutils
+
 
 roles:
-  base:
-   packages:
-    - linux-firmware 
-    - btrfs-progs 
-    - base-devel 
-    - git 
-    - curl 
-    - nano 
-    - openssh 
-    - networkmanager 
-    - pciutils 
-    - usbutils
   server:
     packages:
       - zsh

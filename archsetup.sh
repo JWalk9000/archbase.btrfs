@@ -11,6 +11,7 @@ REPO="jwalk9000/archbase.btrfs/refs/heads/dev"
 
 source <(curl -s $RAW_GITHUB/$REPO/functions.sh)
 source <(curl -s $RAW_GITHUB/$REPO/colors.sh)
+YAML_FILE=$(curl -s $RAW_GITHUB/$REPO/roles/roles.yaml)
 
 
 # Install script dependencies
@@ -97,6 +98,9 @@ until choose_kernel; do : ; done
 
 # Detect and install microcode
 until microcode_detector; do : ; done
+
+# Select system role
+until system_role; do : ; done
 
 # Select additional packages to install
 until user_packages; do : ; done
@@ -216,11 +220,10 @@ fi
 
 # Install the base system and user-selected packages
 install_message
-info_print "=> Installing base system with $KERNEL_PKG, essential packages ad any additional packages"
-sleep 1
-#info_print "=> Installing base $KERNEL_PKG $MICROCODE linux-firmware btrfs-progs base-devel git curl nano openssh networkmanager pciutils usbutils $EFIBOOTMGR $USERPKGS $INSTALL_GPU_DRIVERS"  # These two lines are for troubleshooting package installation.
-#read -p "Press enter to continue"
-pacstrap /mnt base $KERNEL_PKG $MICROCODE $BASE_PKGS $EFIBOOTMGR $USERPKGS $INSTALL_GPU_DRIVERS
+info_print "=> Installing base system with selected role or custom packages"
+sleep 2
+package_lists
+pacstrap /mnt $SYSTEM_PKGS
 
 # Generate the fstab file
 install_message

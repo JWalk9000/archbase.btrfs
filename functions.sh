@@ -182,7 +182,6 @@ select_timezone() {
 # Package and service lists for the role options
 system_role() {
   local ROLE=$1
-  local YAML_FILE=$(curl -s $RAW_GITHUB/$REPO/roles/roles.yaml)
   
   if [ "$ROLE" == "server" ]; then
     ROLE_PKGS=$(yq eval '.server.packages[]' $YAML_FILE | tr '/n' ' ')
@@ -409,6 +408,15 @@ gpu_drivers() {
     INSTALL_GPU_DRIVERS=""
     sleep 1.5
   fi
+}
+
+# Consolidate all package lists (function).
+package_lists() {
+  BASE_PKGS=$BASE_PKGS + $(yq eval '.base.packages[]' $YAML_FILE | tr '/n' ' ')
+  SYSTEM_PKGS="$BASE_PKGS $MICROCODE $INSTALL_GPU_DRIVERS $KERNEL_PKG $ROLE_PKGS $USERPKGS"
+  for PKGS in $SYSTEM_PKGS; do
+    SYSTEM_PKGS=$(echo $SYSTEM_PKGS | tr -s ' ')
+  done
 }
 
 # Choose a bootloader to install (function).
