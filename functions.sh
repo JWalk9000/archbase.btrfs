@@ -186,18 +186,18 @@ system_role() {
   if [ "$ROLE" == "server" ]; then
     ROLE_PKGS=$(yq eval '.server.packages[]' $YAML_FILE | tr '/n' ' ')
     ENABLE_SVCS=$ENABLE_SVCS + $(yq eval '.server.services[]' $YAML_FILE | tr '/n' ' ')
-
-  elif [ "$ROLE" == "gnome" ]; then
-    ROLE_PKGS=$(yq eval '.desktop.gnome.packages[]' $YAML_FILE | tr '/n' ' ')
-    ENABLE_SVCS=$ENABLE_SVCS + $(yq eval '.desktop.gnome.services[]' $YAML_FILE | tr '/n' ' ')
-  
-  elif [ "$ROLE" == "kde" ]; then
-    ROLE_PKGS=$(yq eval '.desktop.kde.packages[]' $YAML_FILE | tr '/n' ' ')
-    ENABLE_SVCS=$ENABLE_SVCS + $(yq eval '.desktop.kde.services[]' $YAML_FILE | tr '/n' ' ')
   
   elif [ "$ROLE" == "xfce" ]; then
     ROLE_PKGS=$(yq eval '.desktop.xfce.packages[]' $YAML_FILE | tr '/n' ' ')
     ENABLE_SVCS=$ENABLE_SVCS + $(yq eval '.desktop.xfce.services[]' $YAML_FILE | tr '/n' ' ')
+  
+  elif [ "$ROLE" == "kde" ]; then
+    ROLE_PKGS=$(yq eval '.desktop.kde.packages[]' $YAML_FILE | tr '/n' ' ')
+    ENABLE_SVCS=$ENABLE_SVCS + $(yq eval '.desktop.kde.services[]' $YAML_FILE | tr '/n' ' ')
+
+  elif [ "$ROLE" == "gnome" ]; then
+    ROLE_PKGS=$(yq eval '.desktop.gnome.packages[]' $YAML_FILE | tr '/n' ' ')
+    ENABLE_SVCS=$ENABLE_SVCS + $(yq eval '.desktop.gnome.services[]' $YAML_FILE | tr '/n' ' ')
   
   elif [ "$ROLE" == "hypr" ]; then
     ROLE_PKGS=$(yq eval '.desktop.hypr.packages[]' $YAML_FILE | tr '/n' ' ')
