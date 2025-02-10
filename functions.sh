@@ -555,7 +555,7 @@ set_root_password() {
   arch-chroot /mnt bash -c "echo \"root:$ROOT_PASS\" | chpasswd"
 }
 
-create_new_user() {
+setup_new_user() {
   display_header
   install_message
   info_print "=> Creating $NEW_USER's profile"

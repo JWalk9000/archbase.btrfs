@@ -251,7 +251,7 @@ until set_timezone; do : ; done
 until set_locale; do : ; done
 until set_hostname; do : ; done
 until set_root_password; do : ; done
-until create_new_user; do : ; done
+until setup_new_user; do : ; done
 until enable_services; do : ; done
 until install_bootloader; do : ; done
 
