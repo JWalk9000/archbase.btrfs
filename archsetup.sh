@@ -98,9 +98,6 @@ until select_timezone; do : ; done
 # Choose a kernel to install
 until choose_kernel; do : ; done
 
-# Detect and install microcode
-until microcode_detector; do : ; done
-
 # Select system role
 until choose_role; do : ; done
 
@@ -108,10 +105,13 @@ until choose_role; do : ; done
 until user_packages; do : ; done
 
 # offer to enable automatic loggin
-until autologin_setup; do : ; done
+until autologin_choice; do : ; done
 
 # offer to enable Destop environment setup
-until desktop_environment; do : ; done
+until desktop_scripts; do : ; done
+
+# Detect and install microcode
+until microcode_detector; do : ; done
 
 # Detect and install GPU drivers
 until gpu_drivers; do : ; done
@@ -224,7 +224,6 @@ fi
 install_message
 info_print "=> Installing base system with selected role or custom packages"
 sleep 2
-package_lists
 pacstrap /mnt $SYSTEM_PKGS
 
 # Generate the fstab file
@@ -243,108 +242,27 @@ export TIMEZONE
 export BOOTLOADER
 export INSTALL_DISK
 
-# Chroot into the new system and configure it
+# Configure the new system
+display_header
+install_message
 info_print "=> Configuring the new system"
-arch-chroot /mnt /bin/bash <<EOF
-# Set the timezone
-ln -sf /usr/share/zoneinfo/$TIMEZONE /etc/localtime
-hwclock --systohc
 
-# Set the locale
-echo "$LOCALE UTF-8" >> /etc/locale.gen
-echo "LANG=$LOCALE" > /etc/locale.conf
-locale-gen
+until set_timezone; do : ; done
+until set_locale; do : ; done
+until set_hostname; do : ; done
+until set_root_password; do : ; done
+until create_new_user; do : ; done
+until enable_services; do : ; done
+until install_bootloader; do : ; done
 
-# Set the hostname
-echo "$HOSTNAME" > /etc/hostname
-{
-  echo "127.0.0.1       localhost"
-  echo "::1             localhost"
-  echo "127.0.1.1       $HOSTNAME.localdomain $HOSTNAME"
-} >> /etc/hosts
-
-# Set the root password
-echo "root:$ROOT_PASS" | chpasswd
-
-# Create the new user
-if [ $SUDO_GROUP == "true" ]; then
-  useradd -m -G wheel -s /bin/bash $NEW_USER
-  echo "$NEW_USER ALL=(ALL) ALL" > /etc/sudoers.d/$NEW_USER
-else
-  useradd -m -s /bin/bash $NEW_USER
-fi
-
-echo "$NEW_USER:$USER_PASS" | chpasswd
-
-# Enable essential services
-systemctl enable NetworkManager
-systemctl enable sshd
-
-
-
-# Install the bootloader
-if [ -d /sys/firmware/efi/efivars ]; then
-  case "$BOOTLOADER" in
-    "systemd-boot")
-      bootctl --path=/boot install
-      ;;
-    "rEFInd")
-      pacman -S --noconfirm refind
-      refind-install
-      mkrlconf --root /mnt --subvol @ --output /mnt/boot/refind_linux.conf
-      ;;
-    *)
-      pacman -S --noconfirm grub
-      grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB
-      grub-mkconfig -o /boot/grub/grub.cfg
-      ;;
-  esac
-else
-  pacman -S --noconfirm grub
-  grub-install --target=i386-pc "$INSTALL_DISK"
-  grub-mkconfig -o /boot/grub/grub.cfg
-fi
-
-EOF
-
-
-# Enable services
-for SVC in "${ENABLE_SVCS[@]}"; do
-  arch-chroot /mnt systemctl enable "$SVC"
-done
 
 #Install a desktop environment scripts if selected
 if [ $DESKTOP_CHOICE == "true" ]; then
-  mkdir -p /mnt/home/$NEW_USER/firstBoot
-  info_print "=> Installing firstBoot scripts"
+  post_install_scripts
+else
+  info_print "=> Post install scripts not selected."
   sleep 1
-  FB_FILES=(
-    "firstBoot.sh"
-    "gui_options.json"
-  )
-  info_print "=> Downloading and installing firstBoot scripts"
-  sleep 1
-  for FILE in "${FB_FILES[@]}"; do 
-    curl -s "$RAW_GITHUB/$REPO/firstBoot/$FILE" | sed "s/user_placeholder/$NEW_USER/g" > /mnt/home/$NEW_USER/firstBoot/$FILE
-    done
-    info_print "=> Setting permissions for firstBoot scripts"
-    sleep 1
-  for FILE in "${FB_FILES[@]}"; do
-    chmod +x /mnt/home/$NEW_USER/firstBoot/$FILE
-  done
-  info_print "=> checking that the firstBoot directory was populated"
-  ls -l /mnt/home/$NEW_USER/firstBoot
-  sleep 3
-
-# Change ownership to the new user
-  #chown -R $NEW_USER:$NEW_USER /mnt/home/$NEW_USER/firstBoot
- arch-chroot /mnt chown -R $NEW_USER:$NEW_USER /home/$NEW_USER/firstBoot
-
-  
-# Add the firstBoot script to the system path
-  echo "export PATH=\$PATH:/home/$NEW_USER/firstBoot" >> /mnt/home/$NEW_USER/.bashrc
 fi
-
 
 # Enable automatic login for the new user
 if [ $AUTOLOGIN_CHOICE == "true" ]; then

@@ -179,6 +179,34 @@ select_timezone() {
   fi
 }
 
+# Choose a kernel to install (function).
+choose_kernel() {
+  display_header
+  info_print "=> Choose a kernel to install:"
+  choices_print "1" ") linux: (default) Vanilla kernel, with Arch Linux patches."
+  choices_print "2" ") linux-lts: Long-term Support kernel."
+  choices_print "3" ") linux-zen: Kernel with the desktop optimizations."
+  choices_print "4" ") linux-hardened: a Security-focused kernel."
+  select_print "1" "4" "Kernel choice: " KERNEL_CHOICE
+  case $KERNEL_CHOICE in
+    1)
+      KERNEL_PKG="linux"
+      return 0;;
+    2)
+      KERNEL_PKG="linux-lts"
+      return 0;;
+    3)
+      KERNEL_PKG="linux-zen"
+      return 0;;
+    4)
+      KERNEL_PKG="linux-hardened"
+      return 0;;
+    *)
+      KERNEL_PKG="linux"
+      return 0;;
+  esac
+}
+
 # Package and service lists for the role options
 system_role() {
   local ROLE=$1
@@ -187,7 +215,6 @@ system_role() {
   ENABLE_SVCS+=$(yq -r ".roles.$ROLE.services[]" $YAML_FILE | tr '\n' ' ')
   
 }
-
 
 # Consolidate all package lists (function).
 package_lists() {
@@ -230,36 +257,10 @@ choose_role() {
       ROLE_PKGS=""
       return 0;;
   esac
+  package_lists
 }
 
 
-# Choose a kernel to install (function).
-choose_kernel() {
-  display_header
-  info_print "=> Choose a kernel to install:"
-  choices_print "1" ") linux: (default) Vanilla kernel, with Arch Linux patches."
-  choices_print "2" ") linux-lts: Long-term Support kernel."
-  choices_print "3" ") linux-zen: Kernel with the desktop optimizations."
-  choices_print "4" ") linux-hardened: a Security-focused kernel."
-  select_print "1" "4" "Kernel choice: " KERNEL_CHOICE
-  case $KERNEL_CHOICE in
-    1)
-      KERNEL_PKG="linux"
-      return 0;;
-    2)
-      KERNEL_PKG="linux-lts"
-      return 0;;
-    3)
-      KERNEL_PKG="linux-zen"
-      return 0;;
-    4)
-      KERNEL_PKG="linux-hardened"
-      return 0;;
-    *)
-      KERNEL_PKG="linux"
-      return 0;;
-  esac
-}
 
 # Install user-specified packages (function).
 verify_packages() {
@@ -340,6 +341,16 @@ user_packages() {
   fi
 }
 
+# Enable Auto-login for the user (function).
+autologin_choice() {
+  display_header
+  Yn_print "Would you like to enable autologin for the $NEW_USER?"
+  read -rp "" AUTOLOGIN_CHOICE
+  if [[ "$AUTOLOGIN_CHOICE" =~ ^([yY][eE][sS]|[yY])$ ]]; then
+    AUTOLOGIN_CHOICE="true"
+    info_print "=> Setting up autologin for the first boot"
+  fi
+}    
 
 # Microcode detector (function).
 microcode_detector () {
@@ -502,6 +513,60 @@ erase_partitions() {
     info_print "No existing partitions found on $INSTALL_DISK"
   fi
 }
+####################################################################################################
+#
+# Installation functions
+#
+####################################################################################################
+
+set_timezone() {
+  display_header
+  install_message
+  info_print "=> Setting the timezone"
+  arch-chroot /mnt ln -sf /usr/share/zoneinfo/$TIMEZONE /etc/localtime
+  arch-chroot /mnt hwclock --systohc
+}
+
+set_locale() {
+  display_header
+  install_message
+  info_print "=> Setting the locale"
+  arch-chroot /mnt bash -c "echo \"$LOCALE UTF-8\" >> /etc/locale.gen"
+  arch-chroot /mnt bash -c "echo \"LANG=$LOCALE\" > /etc/locale.conf"
+  arch-chroot /mnt locale-gen
+}
+
+set_hostname() {
+  display_header
+  install_message
+  info_print "=> Setting the hostname"
+  arch-chroot /mnt bash -c "echo \"$HOSTNAME\" > /etc/hostname"
+  arch-chroot /mnt bash -c "{
+    echo \"127.0.0.1       localhost\"
+    echo \"::1             localhost\"
+    echo \"127.0.1.1       $HOSTNAME.localdomain $HOSTNAME\"
+  } >> /etc/hosts"
+}
+
+set_root_password() {
+  display_header
+  install_message
+  info_print "=> Setting the root password"
+  arch-chroot /mnt bash -c "echo \"root:$ROOT_PASS\" | chpasswd"
+}
+
+create_new_user() {
+  display_header
+  install_message
+  info_print "=> Creating $NEW_USER's profile"
+  if [ "$SUDO_GROUP" == "true" ]; then
+    arch-chroot /mnt useradd -m -G wheel -s /bin/bash $NEW_USER
+    arch-chroot /mnt bash -c "echo \"$NEW_USER ALL=(ALL) ALL\" > /etc/sudoers.d/$NEW_USER"
+  else
+    arch-chroot /mnt useradd -m -s /bin/bash $NEW_USER
+  fi
+  arch-chroot /mnt bash -c "echo \"$NEW_USER:$USER_PASS\" | chpasswd"
+}
 
 # Start the installation process (function).
 install_message() {
@@ -513,26 +578,58 @@ install_message() {
   sleep 1
 }
 
+# Install the bootloader (function).
+install_bootloader() {
+  display_header
+  install_message
+  info_print "=> Installing the bootloader"
+  sleep 1
+  if [ -d /sys/firmware/efi/efivars ]; then
+    case "$BOOTLOADER" in
+      "systemd-boot")
+        arch-chroot /mnt bootctl --path=/boot install
+        ;;
+      "rEFInd")
+        arch-chroot /mnt pacman -S --noconfirm refind
+        arch-chroot /mnt refind-install
+        arch-chroot /mnt mkrlconf --root / --subvol @ --output /boot/refind_linux.conf
+        ;;
+      *)
+        arch-chroot /mnt pacman -S --noconfirm grub
+        arch-chroot /mnt grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB
+        arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg
+        ;;
+    esac
+  else
+    arch-chroot /mnt pacman -S --noconfirm grub
+    arch-chroot /mnt grub-install --target=i386-pc "$INSTALL_DISK"
+    arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg
+  fi
+}
+
+# Enable services (function).
+enable_services() {
+  display_header
+  install_message
+  for SVC in "${ENABLE_SVCS[@]}"; do
+    arch-chroot /mnt systemctl enable "$SVC"
+    if [ $? -eq 0 ]; then
+      info_print "=> Enabled $SVC service"
+    else
+      warning_print "=> Failed to enable $SVC service"
+    fi
+  done
+}
+
 ####################################################################################################
 #
 # Post installation functions.. WIP
 #
 ####################################################################################################
 
-
-
-# Enable Auto-login for the user (function).
-autologin_setup() {
-  display_header
-  Yn_print "Would you like to enable autologin for the $NEW_USER?"
-  read -rp "" AUTOLOGIN_CHOICE
-  if [[ "$AUTOLOGIN_CHOICE" =~ ^([yY][eE][sS]|[yY])$ ]]; then
-    AUTOLOGIN_CHOICE="true"
-    info_print "=> Setting up autologin for the first boot"
-  fi
-}    
     
-desktop_environment() {
+# Offer post installation scripts (function).
+desktop_scripts() {
   display_header
   echo -e "${BWARNING}[EXPERIMENTAL]${RESET}"
   Yn_print "Would you like to enable the desktop environment install script as a command?"
@@ -540,4 +637,36 @@ desktop_environment() {
   if [[ "$DESKTOP_CHOICE" =~ ^([yY][eE][sS]|[yY])$ ]]; then
     DESKTOP_CHOICE="true"    
   fi
+}
+
+
+# Install post installation scripts (function).
+post_install_scripts() {
+  mkdir -p /mnt/home/$NEW_USER/firstBoot
+  info_print "=> Installing firstBoot scripts"
+  sleep 1
+  FB_FILES=(
+    "firstBoot.sh"
+    "gui_options.json"
+  )
+  info_print "=> Downloading and installing firstBoot scripts"
+  sleep 1
+  for FILE in "${FB_FILES[@]}"; do 
+    curl -s "$RAW_GITHUB/$REPO/firstBoot/$FILE" | sed "s/user_placeholder/$NEW_USER/g" > /mnt/home/$NEW_USER/firstBoot/$FILE
+    done
+    info_print "=> Setting permissions for firstBoot scripts"
+    sleep 1
+  for FILE in "${FB_FILES[@]}"; do
+    chmod +x /mnt/home/$NEW_USER/firstBoot/$FILE
+  done
+  info_print "=> checking that the firstBoot directory was populated"
+  ls -l /mnt/home/$NEW_USER/firstBoot
+  sleep 3
+
+  # Change ownership to the new user
+  arch-chroot /mnt chown -R $NEW_USER:$NEW_USER /home/$NEW_USER/firstBoot
+
+  
+  # Add the firstBoot script to the system path
+  echo "export PATH=\$PATH:/home/$NEW_USER/firstBoot" >> /mnt/home/$NEW_USER/.bashrc
 }
