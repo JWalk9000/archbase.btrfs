@@ -267,7 +267,7 @@ choose_role() {
       ROLE_PKGS=""
       return 0;;
   esac
-  package_lists
+  
 }
 
 
@@ -528,6 +528,19 @@ erase_partitions() {
 # Installation functions
 #
 ####################################################################################################
+
+install_base_system() {
+  install_message
+  package_lists
+  info_print "These are the packages that will be installed:"
+  for PKG in $SYSTEM_PKGS; do
+    info_print "  - $PKG\n"
+  done  
+  read -rp "$(echo -e ${INFO}Press ${INPUT}Enter${INFO} to proceed, ${INPUT}CTRL+C${INFO} to abort...${RESET})"
+  info_print "=> Installing base system with selected role or custom packages"
+  sleep 2
+  pacstrap /mnt $SYSTEM_PKGS
+}
 
 set_timezone() {
   display_header
