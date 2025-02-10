@@ -221,10 +221,9 @@ if [ -d /sys/firmware/efi/efivars ]; then
 fi
 
 # Install the base system and user-selected packages
-install_message
-info_print "=> Installing base system with selected role or custom packages"
-sleep 2
-pacstrap /mnt $SYSTEM_PKGS
+until package_lists; do : ; done
+until install_base_system; do : ; done
+
 
 # Generate the fstab file
 install_message
