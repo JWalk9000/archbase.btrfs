@@ -59,6 +59,16 @@ partition_warning() {
   "
 }
 
+# Start the installation process (function).
+install_message() {
+  display_header
+  info_print ""
+  info_print " Time to sit back and relax, maybe go grab a coffee, this will take a while."
+  info_print ""
+  tput cup 20 0 
+  sleep 1
+}
+
 # User selects a hostname (function).
 select_hostname() {
   display_header
@@ -523,6 +533,7 @@ set_timezone() {
   display_header
   install_message
   info_print "=> Setting the timezone"
+  sleep 1
   arch-chroot /mnt ln -sf /usr/share/zoneinfo/$TIMEZONE /etc/localtime
   arch-chroot /mnt hwclock --systohc
 }
@@ -531,6 +542,7 @@ set_locale() {
   display_header
   install_message
   info_print "=> Setting the locale"
+  sleep 1
   arch-chroot /mnt bash -c "echo \"$LOCALE UTF-8\" >> /etc/locale.gen"
   arch-chroot /mnt bash -c "echo \"LANG=$LOCALE\" > /etc/locale.conf"
   arch-chroot /mnt locale-gen
@@ -540,6 +552,7 @@ set_hostname() {
   display_header
   install_message
   info_print "=> Setting the hostname"
+  sleep 1
   arch-chroot /mnt bash -c "echo \"$HOSTNAME\" > /etc/hostname"
   arch-chroot /mnt bash -c "{
     echo \"127.0.0.1       localhost\"
@@ -551,6 +564,7 @@ set_hostname() {
 set_root_password() {
   display_header
   install_message
+  sleep 1
   info_print "=> Setting the root password"
   arch-chroot /mnt bash -c "echo \"root:$ROOT_PASS\" | chpasswd"
 }
@@ -559,6 +573,7 @@ setup_new_user() {
   display_header
   install_message
   info_print "=> Creating $NEW_USER's profile"
+  sleep 1
   if [ "$SUDO_GROUP" == "true" ]; then
     arch-chroot /mnt useradd -m -G wheel -s /bin/bash $NEW_USER
     arch-chroot /mnt bash -c "echo \"$NEW_USER ALL=(ALL) ALL\" > /etc/sudoers.d/$NEW_USER"
@@ -566,16 +581,6 @@ setup_new_user() {
     arch-chroot /mnt useradd -m -s /bin/bash $NEW_USER
   fi
   arch-chroot /mnt bash -c "echo \"$NEW_USER:$USER_PASS\" | chpasswd"
-}
-
-# Start the installation process (function).
-install_message() {
-  display_header
-  info_print ""
-  info_print " Time to sit back and relax, maybe go grab a coffee, this will take a while."
-  info_print ""
-  tput cup 20 0 
-  sleep 1
 }
 
 # Install the bootloader (function).
@@ -587,23 +592,31 @@ install_bootloader() {
   if [ -d /sys/firmware/efi/efivars ]; then
     case "$BOOTLOADER" in
       "systemd-boot")
-        arch-chroot /mnt bootctl --path=/boot install
+        arch-chroot /mnt /bin/bash <<EOF
+        bootctl --path=/boot install
+EOF
         ;;
       "rEFInd")
-        arch-chroot /mnt pacman -S --noconfirm refind
-        arch-chroot /mnt refind-install
-        arch-chroot /mnt mkrlconf --root / --subvol @ --output /boot/refind_linux.conf
+        arch-chroot /mnt /bin/bash <<EOF
+        pacman -S --noconfirm refind
+        refind-install
+        mkrlconf --root / --subvol @ --output /boot/refind_linux.conf
+EOF
         ;;
       *)
-        arch-chroot /mnt pacman -S --noconfirm grub
-        arch-chroot /mnt grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB
-        arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg
+        arch-chroot /mnt /bin/bash <<EOF
+         pacman -S --noconfirm grub
+        grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB
+        grub-mkconfig -o /boot/grub/grub.cfg
+EOF
         ;;
     esac
   else
-    arch-chroot /mnt pacman -S --noconfirm grub
-    arch-chroot /mnt grub-install --target=i386-pc "$INSTALL_DISK"
-    arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg
+    arch-chroot /mnt /bin/bash <<EOF
+    pacman -S --noconfirm grub
+    grub-install --target=i386-pc "$INSTALL_DISK"
+    grub-mkconfig -o /boot/grub/grub.cfg
+EOF
   fi
 }
 
@@ -615,6 +628,7 @@ enable_services() {
     arch-chroot /mnt systemctl enable "$SVC"
     if [ $? -eq 0 ]; then
       info_print "=> Enabled $SVC service"
+      sleep .5
     else
       warning_print "=> Failed to enable $SVC service"
     fi
