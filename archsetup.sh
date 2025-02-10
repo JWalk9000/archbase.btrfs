@@ -81,10 +81,10 @@ greet_user
 until display_warning; do : ; done
 
 # Set hostname
-until set_hostname; do : ; done
+until select_hostname; do : ; done
 
 # Set root password
-until set_root_password; do : ; done
+until select_root_password; do : ; done
 
 # Create a new user
 until create_new_user; do : ; done

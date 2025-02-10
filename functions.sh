@@ -60,7 +60,7 @@ partition_warning() {
 }
 
 # User selects a hostname (function).
-set_hostname() {
+select_hostname() {
   display_header
   read -rp "$(info_print "Enter a name (hostname) for this computer: ")" HOSTNAME
   if [[ -z "$HOSTNAME" ]]; then
@@ -70,7 +70,7 @@ set_hostname() {
 }
 
 # Setting up a password for the root account (function).
-set_root_password() {
+select_root_password() {
   display_header
   while true; do
     read -s -rp "$(echo -e ${INFO}Enter a password for root: ${RESET})" ROOT_PASS1
