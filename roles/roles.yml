@@ -59,7 +59,6 @@ roles:
       - plasma
       - kde-applications
       - wayland
-      - dolphin
       - konsole
       - sddm
     services:
@@ -72,13 +71,14 @@ roles:
       - gdm
   xfce:
     packages:
-      - xfce
-      - xfce-extra
+      - xfce4
+      - xfce4-goodies
     services:
       - lightdm
   hypr:
     packages:
       - hyprland
+      - wayland
       - waybar
       - kitty
       - xorg-wayland

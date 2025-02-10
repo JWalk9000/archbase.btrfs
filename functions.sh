@@ -203,12 +203,19 @@ choose_role() {
   display_header
   info_print "Below are some available system roles to choose from. If you created a userpkgs.txt file, you can skip this step or select a role as well."
   info_print "=> Select a role:"
+  print ""
   choices_print "0" ") Skip/Custom"
+  print ""
   choices_print "1" ") Server ----------------- A basic server setup with some common services aiming at a similar experience to Ubuntu Server."
+  print ""
   choices_print "2" ") Desktop - XFCE --------- A lightweight desktop environment, similar layout to MS Windows 7."
+  print ""
   choices_print "3" ") Desktop - KDE Plasma --- A modern, feature-rich desktop environment, similar layout MS Windows 10/11."
+  print ""
   choices_print "4" ") Desktop - GNOME -------- A modern, feature-rich desktop environment, similar layout to macOS."
-  choices_print "5" ") Desktop - Hyprland ----- A feature-rich, auto-tiling desktop environment. Highly customizable and keyboard-shortcut-driven."
+  print ""
+  choices_print "5" ") Desktop - Hyprland ----- A highly customizable dynamic tiling Wayland compositor keyboard-shortcut-driven."
+  print ""
   select_print "0" "5" "System role: " "SYSTEM_ROLE"
   case $SYSTEM_ROLE in
     1)
