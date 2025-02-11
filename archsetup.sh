@@ -221,6 +221,7 @@ if [ -d /sys/firmware/efi/efivars ]; then
 fi
 
 # Install the base system and user-selected packages
+until detect_vm; do : ; done
 until package_lists; do : ; done
 until install_base_system; do : ; done
 
