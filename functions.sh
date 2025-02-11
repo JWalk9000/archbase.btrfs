@@ -534,7 +534,7 @@ install_base_system() {
   install_message
   info_print "These are the packages that will be installed:"
   for PKG in $SYSTEM_PKGS; do
-    info_print "  - $PKG\n"
+    info_print "  - $PKG"
   done  
   read -rp "$(echo -e ${INFO}Press ${INPUT}Enter${INFO} to proceed, ${INPUT}CTRL+C${INFO} to abort...${RESET})"
   info_print "=> Installing base system with selected role or custom packages"
@@ -543,7 +543,6 @@ install_base_system() {
 }
 
 set_timezone() {
-  display_header
   install_message
   info_print "=> Setting the timezone"
   sleep 1
@@ -552,7 +551,6 @@ set_timezone() {
 }
 
 set_locale() {
-  display_header
   install_message
   info_print "=> Setting the locale"
   sleep 1
@@ -562,7 +560,6 @@ set_locale() {
 }
 
 set_hostname() {
-  display_header
   install_message
   info_print "=> Setting the hostname"
   sleep 1
@@ -575,7 +572,6 @@ set_hostname() {
 }
 
 set_root_password() {
-  display_header
   install_message
   sleep 1
   info_print "=> Setting the root password"
@@ -583,7 +579,6 @@ set_root_password() {
 }
 
 setup_new_user() {
-  display_header
   install_message
   info_print "=> Creating $NEW_USER's profile"
   sleep 1
@@ -598,7 +593,6 @@ setup_new_user() {
 
 # Install the bootloader (function).
 install_bootloader() {
-  display_header
   install_message
   info_print "=> Installing the bootloader"
   sleep 1
@@ -635,13 +629,17 @@ EOF
 
 # Enable services (function).
 enable_services() {
-  display_header
   install_message
+    info_print "These are the Services that will be Enabled:"
+  for SVC in $ENABLE_SVCS; do
+    info_print "  - $SVC"
+  done  
+  read -rp "$(echo -e ${INFO}Press ${INPUT}Enter${INFO} to proceed, ${INPUT}CTRL+C${INFO} to abort...${RESET})"
   for SVC in "${ENABLE_SVCS[@]}"; do
     arch-chroot /mnt systemctl enable "$SVC"
     if [ $? -eq 0 ]; then
       info_print "=> Enabled $SVC service"
-      sleep .5
+      sleep 1
     else
       warning_print "=> Failed to enable $SVC service"
     fi
