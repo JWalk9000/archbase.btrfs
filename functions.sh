@@ -230,9 +230,10 @@ system_role() {
 package_lists() {
   BASE_PKGS+=$(yq -r '.base.packages[]' $YAML_FILE | tr '\n' ' ')
   SYSTEM_PKGS="$BASE_PKGS $MICROCODE $INSTALL_GPU_DRIVERS $KERNEL_PKG $ROLE_PKGS $USERPKGS"
-  for PKGS in $SYSTEM_PKGS; do
-    SYSTEM_PKGS=$(echo $SYSTEM_PKGS | tr -s ' ')
-  done
+  SYSTEM_PKGS=$(echo $SYSTEM_PKGS | tr -s ' ')
+  ENABLE_SVCS+=$(yq -r ".base.services[]" $YAML_FILE | tr '\n' ' ')
+  ENABLE_SVCS=$(echo $ENABLE_SVCS | tr -s ' ')
+  
 }
 
 # Choose a role for the system (function).
@@ -531,7 +532,6 @@ erase_partitions() {
 
 install_base_system() {
   install_message
-  package_lists
   info_print "These are the packages that will be installed:"
   for PKG in $SYSTEM_PKGS; do
     info_print "  - $PKG\n"

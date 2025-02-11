@@ -1,17 +1,19 @@
 base:
- packages:
-  - base
-  - linux-firmware 
-  - btrfs-progs 
-  - base-devel 
-  - git 
-  - curl 
-  - nano 
-  - openssh 
-  - networkmanager 
-  - pciutils 
-  - usbutils
-
+  packages:
+    - base
+    - linux-firmware 
+    - btrfs-progs 
+    - base-devel 
+    - git 
+    - curl 
+    - nano 
+    - openssh 
+    - networkmanager 
+    - pciutils 
+    - usbutils
+  services:
+    - NetworkManager
+    - sshd
 
 roles:
   server:
@@ -67,14 +69,20 @@ roles:
     packages:
       - gnome
       - gnome-extra
+      - wayland
+      - gdm 
     services:
       - gdm
   xfce:
     packages:
       - xfce4
       - xfce4-goodies
+      - xorg
+      - lightdm
+      - lightdm-gtk-greeter
     services:
       - lightdm
+      - avahi-daemon
   hypr:
     packages:
       - hyprland
