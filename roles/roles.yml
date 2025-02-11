@@ -14,6 +14,7 @@ base:
   services:
     - NetworkManager
     - sshd
+    - systemd-timesyncd  # Enable once here for all uses of timesync
 
 roles:
   server:
@@ -92,3 +93,92 @@ roles:
       - xorg-wayland
     services:
       - sddm
+
+virt:
+  kvm:
+    packages:
+      - qemu-guest-agent
+      - virtio-drivers
+      - spice-vdagent
+    services:
+      - qemu-guest-agent
+  oracle:
+    packages:
+      - virtualbox-guest-utils
+      - virtualbox-guest-modules-arch
+      - virtualbox-guest-dkms
+    services:
+      - vboxservice
+  vmware:
+    packages:
+      - open-vm-tools
+      - open-vm-tools-modules
+      - xf86-video-vmware
+    services:
+      - vmtoolsd
+  microsoft:
+    packages:
+      - hyperv
+      - hyperv-guest-tools
+      - hyperv-daemons
+    services:
+      - hv_fcopy_daemon
+      - hv_kvp_daemon
+      - hv_vss_daemon
+  xen:
+    packages:
+      - xen-tools
+    services:
+      - xen-qemu-dm
+      - xenstored
+      - xenconsoled
+
+# containers
+  systemd-nspawn:
+    packages:
+      - systemd
+      - iproute2
+      - dnsutils
+      - net-tools
+      - procps-ng
+      - util-linux
+      - iputils
+    services:
+      - systemd-networkd
+      - systemd-resolved
+  lxc:
+    packages:
+      - systemd
+      - iproute2
+      - dnsutils
+      - net-tools
+      - procps-ng
+      - util-linux
+      - iputils
+    services:
+      - systemd-networkd
+      - systemd-resolved
+  lxc-libvirt:
+    packages:
+      - systemd
+      - iproute2
+      - dnsutils
+      - net-tools
+      - procps-ng
+      - util-linux
+      - iputils
+    services:
+      - systemd-networkd
+      - systemd-resolved
+  openvz:
+    packages:
+      - systemd
+      - iproute2
+      - dnsutils
+      - net-tools
+      - procps-ng
+      - util-linux
+      - iputils
+    services:
+      - systemd-networkd
+      - systemd-resolved

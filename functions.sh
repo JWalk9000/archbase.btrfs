@@ -217,13 +217,37 @@ choose_kernel() {
   esac
 }
 
+# Check if system is running in a virtual machine (function).
+detect_vm() {
+  VIRT_TYPE=$(systemd-detect_vm)
+  case "$VIRT_TYPE" in
+    "oracle" | "vmware" | "kvm" | "microsoft" | "xen")
+      info_print "Virtual machine detected: $VIRT_TYPE, installing packages and services to support virtual machines."
+      sleep 2
+      BASE_PKGS+=$(yq -r ".virt.$VIRT_TYPE.packages[]" $YAML_FILE | tr '\n' ' ')
+      ENABLE_SVCS+=$(yq -r ".virt.$VIRT_TYPE.services[]" $YAML_FILE | tr '\n' ' ')
+      ;;
+    "systemd-nspawn" | "lxc" | "lxc-libvirt" | "openvz" | "podman" | "docker")
+      warning_print "Container detected: $VIRT_TYPE, packages and services will be installed to support containers."
+      sleep 2
+      BASE_PKGS+=$(yq -r ".virt.$VIRT_TYPE.packages[]" $YAML_FILE | tr '\n' ' ')
+      ENABLE_SVCS+=$(yq -r ".virt.$VIRT_TYPE.services[]" $YAML_FILE | tr '\n' ' ')
+      ;;
+    "")
+      return
+      ;;
+    *)
+      warning_print "Notice: Unkown virtual machine type detected."
+      sleep 2
+      ;;
+  esac
+}
+
 # Package and service lists for the role options
 system_role() {
   local ROLE=$1
-  
   ROLE_PKGS=$(yq -r ".roles.$ROLE.packages[]" $YAML_FILE | tr '\n' ' ')
-  ENABLE_SVCS+=$(yq -r ".roles.$ROLE.services[]" $YAML_FILE | tr '\n' ' ')
-  
+  ENABLE_SVCS+=$(yq -r ".roles.$ROLE.services[]" $YAML_FILE | tr '\n' ' ') 
 }
 
 # Consolidate all package lists (function).
@@ -232,8 +256,6 @@ package_lists() {
   SYSTEM_PKGS="$BASE_PKGS $MICROCODE $INSTALL_GPU_DRIVERS $KERNEL_PKG $ROLE_PKGS $USERPKGS"
   SYSTEM_PKGS=$(echo $SYSTEM_PKGS | tr -s ' ')
   ENABLE_SVCS+=$(yq -r ".base.services[]" $YAML_FILE | tr '\n' ' ')
-  ENABLE_SVCS=$(echo $ENABLE_SVCS | tr -s ' ')
-  
 }
 
 # Choose a role for the system (function).
@@ -642,6 +664,7 @@ enable_services() {
       sleep 1
     else
       warning_print "=> Failed to enable $SVC service"
+      sleep 2
     fi
   done
 }
