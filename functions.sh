@@ -219,7 +219,37 @@ choose_kernel() {
 
 # Check if system is running in a virtual machine (function).
 detect_vm() {
-  VIRT_TYPE=$(systemd-detect-vm)
+  VIRT_TYPE=""
+  VMTYPES=("vboxguest" "vmware" "kvm" "microsoft" "xen")
+  for VM in "${VMTYPES[@]}"; do 
+    case "$VM" in
+      "xen")
+        if [ -d /proc/xen ]; then VIRT_TYPE="xen";
+        fi
+        ;;
+      "vboxguest")
+        if lsmod | grep -q "vboxguest"; then VIRT_TYPE="oracle";
+        fi
+        ;;
+      "vmware")
+        if lspci | grep -i "VMware SVGA II Adapter"; then VIRT_TYPE="vmware";
+        fi
+        ;;
+      "kvm")  
+        if [ -d /run/systemd/system ]; then
+          if systemctl list-units | grep -q "virtlogd"; then VIRT_TYPE="kvm";
+          fi
+        fi
+        ;;
+      "microsoft")
+        if [ -d /sys/firmware/efi/efivars ]; then
+          if dmesg | grep -q "Microsoft Hyper-V"; then VIRT_TYPE="microsoft";
+          fi
+        fi
+        ;;
+    esac
+  done
+      
   case "$VIRT_TYPE" in
     "oracle" | "vmware" | "kvm" | "microsoft" | "xen")
       info_print "Virtual machine detected: $VIRT_TYPE, installing packages and services to support virtual machines."
