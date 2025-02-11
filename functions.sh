@@ -219,7 +219,7 @@ choose_kernel() {
 
 # Check if system is running in a virtual machine (function).
 detect_vm() {
-  VIRT_TYPE=$(systemd-detect_vm)
+  VIRT_TYPE=$(systemd-detect-vm)
   case "$VIRT_TYPE" in
     "oracle" | "vmware" | "kvm" | "microsoft" | "xen")
       info_print "Virtual machine detected: $VIRT_TYPE, installing packages and services to support virtual machines."
