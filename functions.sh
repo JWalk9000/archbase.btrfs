@@ -702,18 +702,25 @@ EOF
 enable_services() {
   install_message
   local SERVICES=("${ENABLE_SVCS[@]}")
-  arch-chroot /mnt /bin/bash -c "
-    for SVC in \"${SERVICES[@]}\"; do
-      systemctl enable \"\$SVC\"
-      if [ $? -eq 0 ]; then
-        echo \"=> Enabled \$SVC service\"
-        sleep 1
-      else
-        echo \"=> Failed to enable \$SVC service\"
-        sleep 2
-      fi
-    done
-  "
+  mount --bind /sys /mnt/sys
+  mount --bind /proc /mnt/proc
+  mount --bind /dev /mnt/dev
+  for SVC in "${SERVICES[@]}"; do
+    arch-chroot /mnt systemctl enable "$SVC" && info_print "=> Enabled $SVC service" || warning_print "=> Failed to enable $SVC service"
+    sleep 1.5
+  done
+  #arch-chroot /mnt /bin/bash -c "
+  #  for SVC in \"${SERVICES[@]}\"; do
+  #    systemctl enable \"\$SVC\"
+  #    if [ $? -eq 0 ]; then
+  #      echo \"=> Enabled \$SVC service\"
+  #      sleep 1
+  #    else
+  #      echo \"=> Failed to enable \$SVC service\"
+  #      sleep 2
+  #    fi
+  #  done
+  #"
 }
 
 ####################################################################################################
