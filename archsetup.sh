@@ -66,8 +66,7 @@ AUTOLOGIN_CHOICE=""         # 'true' or blank
 # Enable other services here if needed #
 ########################################
 ENABLE_SVCS=(
-  "NetworkManager"
-  "sshd"
+  ""
   #"sddm"   # example exra service
 )
 
