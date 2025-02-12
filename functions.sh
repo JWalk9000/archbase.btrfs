@@ -1,6 +1,11 @@
 #!/usr/bin/bash
 
 
+####################################################################################################
+#
+# header and message functions
+#
+####################################################################################################
 # Function to display the header.
 display_header() {
   clear
@@ -68,6 +73,15 @@ install_message() {
   tput cup 20 0 
   sleep 1
 }
+
+
+
+
+####################################################################################################
+#
+# system configuration functions
+#
+####################################################################################################
 
 # User selects a hostname (function).
 select_hostname() {
@@ -323,8 +337,6 @@ choose_role() {
   
 }
 
-
-
 # Install user-specified packages (function).
 verify_packages() {
   VERIFIED_PKGS=""
@@ -479,7 +491,6 @@ gpu_drivers() {
   fi
 }
 
-
 # Choose a bootloader to install (function).
 choose_bootloader() {
   display_header
@@ -576,6 +587,9 @@ erase_partitions() {
     info_print "No existing partitions found on $INSTALL_DISK"
   fi
 }
+
+
+
 ####################################################################################################
 #
 # Installation functions
@@ -587,6 +601,11 @@ install_base_system() {
   info_print "These are the packages that will be installed:"
   for PKG in $SYSTEM_PKGS; do
     info_print "  - $PKG"
+  done  
+  read -rp "$(echo -e ${INFO}Press ${INPUT}Enter${INFO} to proceed, ${INPUT}CTRL+C${INFO} to abort...${RESET})"
+      info_print "These are the Services that will be Enabled:"
+  for SVC in $ENABLE_SVCS; do
+    info_print "  - $SVC"
   done  
   read -rp "$(echo -e ${INFO}Press ${INPUT}Enter${INFO} to proceed, ${INPUT}CTRL+C${INFO} to abort...${RESET})"
   info_print "=> Installing base system with selected role or custom packages"
@@ -682,21 +701,18 @@ EOF
 # Enable services (function).
 enable_services() {
   install_message
-    info_print "These are the Services that will be Enabled:"
-  for SVC in $ENABLE_SVCS; do
-    info_print "  - $SVC"
-  done  
-  read -rp "$(echo -e ${INFO}Press ${INPUT}Enter${INFO} to proceed, ${INPUT}CTRL+C${INFO} to abort...${RESET})"
-  for SVC in "${ENABLE_SVCS[@]}"; do
-    arch-chroot /mnt systemctl enable "$SVC"
-    if [ $? -eq 0 ]; then
-      info_print "=> Enabled $SVC service"
-      sleep 1
-    else
-      warning_print "=> Failed to enable $SVC service"
-      sleep 2
-    fi
-  done
+  arch-chroot /mnt /bin/bash <<EOF
+    for SVC in "${ENABLE_SVCS[@]}"; do
+      systemctl enable "$SVC"
+      if [ $? -eq 0 ]; then
+        info_print "=> Enabled $SVC service"
+        sleep 1
+      else
+        warning_print "=> Failed to enable $SVC service"
+        sleep 2
+      fi
+    done
+EOF
 }
 
 ####################################################################################################
