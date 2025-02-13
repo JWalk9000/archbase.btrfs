@@ -62,6 +62,7 @@ roles:
       - plasma
       - kde-applications
       - wayland
+      - xorg-xwayland
       - konsole
       - sddm
     services:
@@ -90,7 +91,7 @@ roles:
       - wayland
       - waybar
       - kitty
-      - xorg-wayland
+      - xorg-xwayland
     services:
       - sddm
 
