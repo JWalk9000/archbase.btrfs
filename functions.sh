@@ -705,8 +705,8 @@ enable_services() {
   mount --bind /sys /mnt/sys
   mount --bind /proc /mnt/proc
   mount --bind /dev /mnt/dev
-  for SVC in "${SERVICES[@]}"; do
-    arch-chroot /mnt systemctl enable "$SVC" && info_print "=> Enabled $SVC service" || warning_print "=> Failed to enable $SVC service"
+  for SVC in $SERVICES; do
+    arch-chroot /mnt systemctl enable "$SVC" && info_print "=> $SVC service enabled" || warning_print "=> $SVC service not enabled"
     sleep 1.5
   done
   #arch-chroot /mnt /bin/bash -c "
