@@ -130,94 +130,9 @@ until erase_partitions; do : ; done
 # Start the installation process
 install_message
 
-# Partition the disk
-if [ -d /sys/firmware/efi/efivars ]; then
-  (
-  echo g # Create a new empty GPT partition table
-  echo n # Add a new partition
-  echo 1 # Partition number
-  echo   # First sector (Accept default: 1MiB)
-  echo +512M # Last sector (Accept default: varies)
-  echo t # Change partition type
-  echo 1 # EFI System
-  echo n # Add a new partition
-  echo 2 # Partition number
-  echo   # First sector (Accept default: varies)
-  echo   # Last sector (Accept default: varies)
-  echo w # Write changes
-  ) | fdisk "$INSTALL_DISK"
-  partprobe "$INSTALL_DISK"
+# create the partitions and filesystems
+until partitioning; do : ; done
 
-  # Format the partitions
-  if [[ "$INSTALL_DISK" == *"nvme"* ]]; then
-    EFI_PART="${INSTALL_DISK}p1"
-    BTRFS_PART="${INSTALL_DISK}p2"
-  else
-    EFI_PART="${INSTALL_DISK}1"
-    BTRFS_PART="${INSTALL_DISK}2"
-  fi
-
-  info_print "=> Formatting EFI partition as FAT32"
-  sleep 1
-  mkfs.fat -F 32 "$EFI_PART"
-else
-  (
-  echo o # Create a new empty DOS partition table
-  echo n # Add a new partition
-  echo p # Primary partition
-  echo 1 # Partition number
-  echo   # First sector (Accept default: 1MiB)
-  echo   # Last sector (Accept default: varies)
-  echo a # Make partition bootable
-  echo 1 # Partition number
-  echo w # Write changes
-  ) | fdisk "$INSTALL_DISK"
-  partprobe "$INSTALL_DISK"
-
-  # Format the partitions
-  if [[ "$INSTALL_DISK" == *"nvme"* ]]; then
-    BTRFS_PART="${INSTALL_DISK}p1"
-  else
-    BTRFS_PART="${INSTALL_DISK}1"
-  fi
-fi
-
-info_print "=> Formatting primary partition as Btrfs"
-sleep 1
-mkfs.btrfs -f "$BTRFS_PART"
-
-# Create and mount Btrfs subvolumes
-info_print "=> Mounting $BTRFS_PART to /mnt"
-sleep 1
-mount "$BTRFS_PART" /mnt
-
-info_print "=> Creating BTRFS subvolumes"
-sleep 1
-btrfs subvolume create /mnt/@
-btrfs subvolume create /mnt/@home
-btrfs subvolume create /mnt/@snapshots
-info_print "=> BTRFS subvolumes /@, /@home, and @/snapshots created"
-sleep 1
-
-info_print "=> Unmounting /mnt to re-mount subvolumes"
-sleep 1
-umount /mnt
-
-info_print "=> Remounting subvolumes"
-sleep 1
-mount -o subvol=@ "$BTRFS_PART" /mnt
-mkdir -p /mnt/home
-mount -o subvol=@home "$BTRFS_PART" /mnt/home
-mkdir -p /mnt/.snapshots
-mount -o subvol=@snapshots "$BTRFS_PART" /mnt/.snapshots
-
-# Mount EFI partition
-if [ -d /sys/firmware/efi/efivars ]; then
-  info_print "=> Mounting EFI partition at /mnt/boot"
-  sleep 1
-  mkdir -p /mnt/boot
-  mount "$EFI_PART" /mnt/boot
-fi
 
 # Install the base system and user-selected packages
 until detect_vm; do : ; done
@@ -228,6 +143,7 @@ until install_base_system; do : ; done
 # Generate the fstab file
 install_message
 info_print "=> Generating the fstab file"
+sleep 1
 genfstab -U /mnt >> /mnt/etc/fstab
 
 # Export the configuration variables
@@ -245,6 +161,7 @@ export INSTALL_DISK
 display_header
 install_message
 info_print "=> Configuring the new system"
+sleep 1.5
 
 until set_timezone; do : ; done
 until set_locale; do : ; done

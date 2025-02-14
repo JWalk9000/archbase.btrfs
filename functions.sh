@@ -157,20 +157,24 @@ create_new_user() {
 
 select_locale() {
   display_header
+  echo ""
   info_print "=> Refreshing locale list"
+  local INSTRUCTIONS="
+  => Start typing and/or use 'up' and 'down' arrows to search for a locale, this uses fuzzy find. 
+      For instance: 'enust' to find 'en_US.UTF-8' ( US English with support for UTF-8 character set).
+  
+  Press Enter to select once you have found the desired locale.
+  "
   sleep 1
 
   # Use the locale.gen file from the install image
   cp /etc/locale.gen /tmp/locale.gen
-
-  info_print "=> Start typing to search for a locale, this uses fuzzy find (for instance: "enust" to find en_US.UTF-8), you can also use "up" and "down" keys, then press Enter to select."
-  sleep 3
   
   # Read the available locales into an array
   mapfile -t locales < <(grep -E '^[#]*[a-z]{2,}_[A-Z]{2,}' /tmp/locale.gen | sed 's/^#//' | awk '{print $1}')
   
   # Use fzf to select a locale
-  selected_locale=$(printf "%s\n" "${locales[@]}" | fzf --prompt="Search: " --header="Locales available:")
+  selected_locale=$(printf "%s\n" "${locales[@]}" | fzf --prompt="$INSTRUCTIONS: " --header="Locales available:")
 
   if [[ -n "$selected_locale" ]]; then
     info_print "Selected locale: $selected_locale"
@@ -184,16 +188,18 @@ select_locale() {
 # User selects a timezone (function).
 select_timezone() {
   display_header
-  info_print "=> Start typing to search for a timezone, this uses fuzzy find (for instance: "eulo" to find Europe/London), 
-    you can also use "up" and "down" keys, then press Enter to select."
+  local INSTRUCTIONS="
+  => Start typing and/or use 'up' and 'down' arrows to search for a timezone, this uses fuzzy find. 
+      For instance: 'eulo' to find 'Europe/London', or 'cace' to fine 'Canada/Central'.
   
-  sleep 3
-  
+  Press Enter to select once you have found the desired locale.
+  "
+
   # Read the available timezones into an array
   mapfile -t timezones < <(timedatectl list-timezones)
   
   # Use fzf to select a timezone
-  selected_timezone=$(printf "%s\n" "${timezones[@]}" | fzf --prompt="Search: " --header="Timezones available:")
+  selected_timezone=$(printf "%s\n" "${timezones[@]}" | fzf --prompt="$INSTRUCTIONS: " --header="Timezones available:")
 
   if [[ -n "$selected_timezone" ]]; then
     info_print "Selected timezone: $selected_timezone"
@@ -588,6 +594,97 @@ erase_partitions() {
   fi
 }
 
+partitioning() {
+  install_message
+  # Partition the disk
+  if [ -d /sys/firmware/efi/efivars ]; then
+    (
+    echo g # Create a new empty GPT partition table
+    echo n # Add a new partition
+    echo 1 # Partition number
+    echo   # First sector (Accept default: 1MiB)
+    echo +512M # Last sector (Accept default: varies)
+    echo t # Change partition type
+    echo 1 # EFI System
+    echo n # Add a new partition
+    echo 2 # Partition number
+    echo   # First sector (Accept default: varies)
+    echo   # Last sector (Accept default: varies)
+    echo w # Write changes
+    ) | fdisk "$INSTALL_DISK"
+    partprobe "$INSTALL_DISK"
+
+    # Format the partitions
+    if [[ "$INSTALL_DISK" == *"nvme"* ]]; then
+      EFI_PART="${INSTALL_DISK}p1"
+      BTRFS_PART="${INSTALL_DISK}p2"
+    else
+      EFI_PART="${INSTALL_DISK}1"
+      BTRFS_PART="${INSTALL_DISK}2"
+    fi
+
+    info_print "=> Formatting EFI partition as FAT32"
+    sleep 1
+    mkfs.fat -F 32 "$EFI_PART"
+  else
+    (
+    echo o # Create a new empty DOS partition table
+    echo n # Add a new partition
+    echo p # Primary partition
+    echo 1 # Partition number
+    echo   # First sector (Accept default: 1MiB)
+    echo   # Last sector (Accept default: varies)
+    echo a # Make partition bootable
+    echo 1 # Partition number
+    echo w # Write changes
+    ) | fdisk "$INSTALL_DISK"
+    partprobe "$INSTALL_DISK"
+
+    # Format the partitions
+    if [[ "$INSTALL_DISK" == *"nvme"* ]]; then
+      BTRFS_PART="${INSTALL_DISK}p1"
+    else
+      BTRFS_PART="${INSTALL_DISK}1"
+    fi
+  fi
+
+  info_print "=> Formatting primary partition as Btrfs"
+  sleep 1
+  mkfs.btrfs -f "$BTRFS_PART"
+
+  # Create and mount Btrfs subvolumes
+  info_print "=> Mounting $BTRFS_PART to /mnt"
+  sleep 1
+  mount "$BTRFS_PART" /mnt
+
+  info_print "=> Creating BTRFS subvolumes"
+  sleep 1
+  btrfs subvolume create /mnt/@
+  btrfs subvolume create /mnt/@home
+  btrfs subvolume create /mnt/@snapshots
+  info_print "=> BTRFS subvolumes /@, /@home, and @/snapshots created"
+  sleep 1
+
+  info_print "=> Unmounting /mnt to re-mount subvolumes"
+  sleep 1
+  umount /mnt
+
+  info_print "=> Remounting subvolumes"
+  sleep 1
+  mount -o subvol=@ "$BTRFS_PART" /mnt
+  mkdir -p /mnt/home
+  mount -o subvol=@home "$BTRFS_PART" /mnt/home
+  mkdir -p /mnt/.snapshots
+  mount -o subvol=@snapshots "$BTRFS_PART" /mnt/.snapshots
+
+  # Mount EFI partition
+  if [ -d /sys/firmware/efi/efivars ]; then
+    info_print "=> Mounting EFI partition at /mnt/boot"
+    sleep 1
+    mkdir -p /mnt/boot
+    mount "$EFI_PART" /mnt/boot
+  fi
+}
 
 
 ####################################################################################################
@@ -603,6 +700,7 @@ install_base_system() {
     info_print "  - $PKG"
   done  
   read -rp "$(echo -e ${INFO}Press ${INPUT}Enter${INFO} to proceed, ${INPUT}CTRL+C${INFO} to abort...${RESET})"
+      echo ""
       info_print "These are the Services that will be Enabled:"
   for SVC in $ENABLE_SVCS; do
     info_print "  - $SVC"
@@ -646,13 +744,14 @@ set_root_password() {
   install_message
   sleep 1
   info_print "=> Setting the root password"
+  sleep 1.25
   arch-chroot /mnt bash -c "echo \"root:$ROOT_PASS\" | chpasswd"
 }
 
 setup_new_user() {
   install_message
   info_print "=> Creating $NEW_USER's profile"
-  sleep 1
+  sleep 1.25
   if [ "$SUDO_GROUP" == "true" ]; then
     arch-chroot /mnt useradd -m -G wheel -s /bin/bash $NEW_USER
     arch-chroot /mnt bash -c "echo \"$NEW_USER ALL=(ALL) ALL\" > /etc/sudoers.d/$NEW_USER"
@@ -709,18 +808,6 @@ enable_services() {
     arch-chroot /mnt systemctl enable "$SVC" && info_print "=> $SVC service enabled" || warning_print "=> $SVC service not enabled"
     sleep 1.5
   done
-  #arch-chroot /mnt /bin/bash -c "
-  #  for SVC in \"${SERVICES[@]}\"; do
-  #    systemctl enable \"\$SVC\"
-  #    if [ $? -eq 0 ]; then
-  #      echo \"=> Enabled \$SVC service\"
-  #      sleep 1
-  #    else
-  #      echo \"=> Failed to enable \$SVC service\"
-  #      sleep 2
-  #    fi
-  #  done
-  #"
 }
 
 ####################################################################################################
@@ -734,13 +821,12 @@ enable_services() {
 desktop_scripts() {
   display_header
   echo -e "${BWARNING}[EXPERIMENTAL]${RESET}"
-  Yn_print "Would you like to enable the desktop environment install script as a command?"
+  Yn_print "Would you like to enable the custom desktop environment install script as a command?"
   read -rp "" DESKTOP_CHOICE
   if [[ "$DESKTOP_CHOICE" =~ ^([yY][eE][sS]|[yY])$ ]]; then
     DESKTOP_CHOICE="true"    
   fi
 }
-
 
 # Install post installation scripts (function).
 post_install_scripts() {
@@ -752,12 +838,12 @@ post_install_scripts() {
     "gui_options.json"
   )
   info_print "=> Downloading and installing firstBoot scripts"
-  sleep 1
+  sleep 1.25
   for FILE in "${FB_FILES[@]}"; do 
     curl -s "$RAW_GITHUB/$REPO/firstBoot/$FILE" | sed "s/user_placeholder/$NEW_USER/g" > /mnt/home/$NEW_USER/firstBoot/$FILE
     done
     info_print "=> Setting permissions for firstBoot scripts"
-    sleep 1
+    sleep 1.25
   for FILE in "${FB_FILES[@]}"; do
     chmod +x /mnt/home/$NEW_USER/firstBoot/$FILE
   done
