@@ -174,7 +174,9 @@ select_locale() {
   mapfile -t locales < <(grep -E '^[#]*[a-z]{2,}_[A-Z]{2,}' /tmp/locale.gen | sed 's/^#//' | awk '{print $1}')
   
   # Use fzf to select a locale
-  selected_locale=$(printf "%s\n" "${locales[@]}" | fzf --prompt="$INSTRUCTIONS: " --header="Locales available:")
+  selected_locale=$(printf "%s\n" "${locales[@]}" | fzf --prompt="$INSTRUCTIONS: " --header="
+  $INSTRUCTIONS
+  Locales available:")
 
   if [[ -n "$selected_locale" ]]; then
     info_print "Selected locale: $selected_locale"
@@ -240,33 +242,46 @@ choose_kernel() {
 # Check if system is running in a virtual machine (function).
 detect_vm() {
   VIRT_TYPE=$(systemd-detect-virt)
-
+  info_print "=> Detecting whether the system is running in a virtual machine"
+  sleep 1.5
   case "$VIRT_TYPE" in
     "oracle")
+      info_print "Running in a VirtualBox virtual machine. Installing VirtualBox guest utilities."
+      sleep 1.5
       BASE_PKGS+=$(yq eval -r ".virt.oracle.packages[]" $YAML_FILE | tr '\n' ' ')
       ENABLE_SVCS+=$(yq eval -r ".virt.oracle.services[]" $YAML_FILE | tr '\n' ' ')
       ;;
     "vmware")
+      info_print "Running in a VMware virtual machine. Installing VMware guest utilities."
+      sleep 1.5
       BASE_PKGS+=$(yq eval -r ".virt.vmware.packages[]" $YAML_FILE | tr '\n' ' ')
       ENABLE_SVCS+=$(yq eval -r ".virt.vmware.services[]" $YAML_FILE | tr '\n' ' ')
       ;;
     "kvm")
+      info_print "Running in a KVM or QEMU virtual machine. Installing QEMU guest utilities." 
+      sleep 1.5
       BASE_PKGS+=$(yq eval -r ".virt.kvm.packages[]" $YAML_FILE | tr '\n' ' ')
       ENABLE_SVCS+=$(yq eval -r ".virt.kvm.services[]" $YAML_FILE | tr '\n' ' ')
       ;;
     "microsoft")
+      info_print "Running in a Hyper-V virtual machine. Installing Hyper-V guest utilities."
+      sleep 1.5
       BASE_PKGS+=$(yq eval -r ".virt.microsoft.packages[]" $YAML_FILE | tr '\n' ' ')
       ENABLE_SVCS+=$(yq eval -r ".virt.microsoft.services[]" $YAML_FILE | tr '\n' ' ')
       ;;
     "xen")
+      info_print "Running in a Xen virtual machine. Installing Xen guest utilities."
+      sleep 1.5
       BASE_PKGS+=$(yq eval -r ".virt.xen.packages[]" $YAML_FILE | tr '\n' ' ')
       ENABLE_SVCS+=$(yq eval -r ".virt.xen.services[]" $YAML_FILE | tr '\n' ' ')
       ;;
     "")
       echo "Not running in a virtual machine."
+      sleep 1.5
       ;;
     *)
-      echo "Unknown virtualization type: $VIRT_TYPE"
+      echo "Unknown virtualization type: $VIRT_TYPE, no additional packages will be installed."
+      sleep 1.5
       ;;
   esac
 }
