@@ -9,6 +9,8 @@ REPO="jwalk9000/archbase.btrfs/dev"
 #  RAW_GITHUB=""
 #  REPO=$LOCALREPO 
 
+source <(curl -s $RAW_GITHUB/$REPO/colors.sh)
+
 # Install script dependencies
 PKGDEPS=(
   "jq"
@@ -29,7 +31,6 @@ for PKG in "${PKGDEPS[@]}"; do
 done
 
 source <(curl -s $RAW_GITHUB/$REPO/functions.sh)
-source <(curl -s $RAW_GITHUB/$REPO/colors.sh)
 
 #####################################################
 # Script variables -- some of these can be pre-set  #
