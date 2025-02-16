@@ -239,59 +239,41 @@ choose_kernel() {
 
 # Check if system is running in a virtual machine (function).
 detect_vm() {
-  VIRT_TYPE=""
-  VMTYPES=("vboxguest" "vmware" "kvm" "microsoft" "xen")
-  for VM in "${VMTYPES[@]}"; do 
-    case "$VM" in
-      "xen")
-        if [ -d /proc/xen ]; then VIRT_TYPE="xen";
-        fi
-        ;;
-      "vboxguest")
-        if lsmod | grep -q "vboxguest"; then VIRT_TYPE="oracle";
-        fi
-        ;;
-      "vmware")
-        if lspci | grep -i "VMware SVGA II Adapter"; then VIRT_TYPE="vmware";
-        fi
-        ;;
-      "kvm")  
-        if [ -d /run/systemd/system ]; then
-          if systemctl list-units | grep -q "virtlogd"; then VIRT_TYPE="kvm";
-          fi
-        fi
-        ;;
-      "microsoft")
-        if [ -d /sys/firmware/efi/efivars ]; then
-          if dmesg | grep -q "Microsoft Hyper-V"; then VIRT_TYPE="microsoft";
-          fi
-        fi
-        ;;
-    esac
-  done
-      
+  VIRT_TYPE=$(systemd-detect-virt)
+
   case "$VIRT_TYPE" in
-    "oracle" | "vmware" | "kvm" | "microsoft" | "xen")
-      info_print "Virtual machine detected: $VIRT_TYPE, installing packages and services to support virtual machines."
-      sleep 2
-      BASE_PKGS+=$(yq -r ".virt.$VIRT_TYPE.packages[]" $YAML_FILE | tr '\n' ' ')
-      ENABLE_SVCS+=$(yq -r ".virt.$VIRT_TYPE.services[]" $YAML_FILE | tr '\n' ' ')
+    "oracle")
+      BASE_PKGS+=$(yq eval -r ".virt.oracle.packages[]" $YAML_FILE | tr '\n' ' ')
+      ENABLE_SVCS+=$(yq eval -r ".virt.oracle.services[]" $YAML_FILE | tr '\n' ' ')
       ;;
-    "systemd-nspawn" | "lxc" | "lxc-libvirt" | "openvz" | "podman" | "docker")
-      warning_print "Container detected: $VIRT_TYPE, packages and services will be installed to support containers."
-      sleep 2
-      BASE_PKGS+=$(yq -r ".virt.$VIRT_TYPE.packages[]" $YAML_FILE | tr '\n' ' ')
-      ENABLE_SVCS+=$(yq -r ".virt.$VIRT_TYPE.services[]" $YAML_FILE | tr '\n' ' ')
+    "vmware")
+      BASE_PKGS+=$(yq eval -r ".virt.vmware.packages[]" $YAML_FILE | tr '\n' ' ')
+      ENABLE_SVCS+=$(yq eval -r ".virt.vmware.services[]" $YAML_FILE | tr '\n' ' ')
+      ;;
+    "kvm")
+      BASE_PKGS+=$(yq eval -r ".virt.kvm.packages[]" $YAML_FILE | tr '\n' ' ')
+      ENABLE_SVCS+=$(yq eval -r ".virt.kvm.services[]" $YAML_FILE | tr '\n' ' ')
+      ;;
+    "microsoft")
+      BASE_PKGS+=$(yq eval -r ".virt.microsoft.packages[]" $YAML_FILE | tr '\n' ' ')
+      ENABLE_SVCS+=$(yq eval -r ".virt.microsoft.services[]" $YAML_FILE | tr '\n' ' ')
+      ;;
+    "xen")
+      BASE_PKGS+=$(yq eval -r ".virt.xen.packages[]" $YAML_FILE | tr '\n' ' ')
+      ENABLE_SVCS+=$(yq eval -r ".virt.xen.services[]" $YAML_FILE | tr '\n' ' ')
       ;;
     "")
-      return
+      echo "Not running in a virtual machine."
       ;;
     *)
-      warning_print "Notice: Unkown virtual machine type detected."
-      sleep 2
+      echo "Unknown virtualization type: $VIRT_TYPE"
       ;;
   esac
 }
+
+# Call the detect_vm function during your install script
+detect_vm
+
 
 # Package and service lists for the role options
 system_role() {
