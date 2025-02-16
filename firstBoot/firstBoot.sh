@@ -20,6 +20,19 @@ if [ "$EUID" -ne 0 ]; then
   sudo -v
 fi
 
+PKGDEPS=(
+  "jq" 
+  "fzf"
+)
+sudo pacman -Sy
+
+info_print "=> Installing script dependencies"
+for PKG in "${PKGDEPS[@]}"; do
+  if ! sudo pacman -Qs "$PKG" > /dev/null ; then
+    sudo pacman -S --noconfirm "$PKG"
+  fi
+done
+
 # Check If Yay is installed
 if ! pacman -Qs yay > /dev/null ; then
   IS_YA=0
@@ -50,26 +63,22 @@ disable_autologin() {
   info_print "Autologin has been disabled."
 }
 
-PKGDEPS=(
-  "jq" 
-  "fzf"
-)
-sudo pacman -Sy
-
-info_print "=> Installing script dependencies"
-for PKG in "${PKGDEPS[@]}"; do
-  if ! sudo pacman -Qs "$PKG" > /dev/null ; then
-    sudo pacman -S --noconfirm "$PKG"
+# Function to run gui setup script and handle cleanup
+gui_script() {
+  local script_path="$1"
+  if ! bash "$script_path"; then
+    warning_print "Child script $script_path failed. Performing cleanup."
+    rm -rf "$TMPLOCALREPO"
+    exit 1
   fi
-done
-
+}
 
 # Display the header, warning and greeting at the start
 display_header
 info_print "Welcome to the first boot setup script. This script will guide you through the setup process."
 echo ""
 banner_print "This is the First Boot Setup, where you can install optional GUI setups from a prepopulated .json file.
-Select 'None' to just install the Yay package manager. 
+Select 'None' to just install the Yay package manager, 'CTRL+C' to exit. 
 These are not my scripts, however I do plan on adding my own here too evetually. I do my best to pre-vet 
 these scripts, however, it is always in your best interest to know and understand any script before running it."
 echo ""
@@ -119,7 +128,8 @@ select gui_choice in "${options[@]}"; do
     echo ""
     info_print "Installing $gui_choice..."
     git clone "$repo" $TMPLOCALREPO
-    bash $TMPLOCALREPO/"$installer"
+    cd $TMPLOCALREPO
+    gui_script "$TMPLOCALREPO/$installer"
     break
   else
     info_print "Invalid option. Please try again."
