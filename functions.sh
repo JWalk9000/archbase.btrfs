@@ -174,9 +174,7 @@ select_locale() {
   mapfile -t locales < <(grep -E '^[#]*[a-z]{2,}_[A-Z]{2,}' /tmp/locale.gen | sed 's/^#//' | awk '{print $1}')
   
   # Use fzf to select a locale
-  selected_locale=$(printf "%s\n" "${locales[@]}" | fzf --prompt="$INSTRUCTIONS: " --header="
-  $INSTRUCTIONS
-  Locales available:")
+  selected_locale=$(printf "%s\n" "${locales[@]}" | fzf --prompt="Search:" --header="$instructions")
 
   if [[ -n "$selected_locale" ]]; then
     info_print "Selected locale: $selected_locale"
