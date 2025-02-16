@@ -90,10 +90,10 @@ kate neofetch kitty htop sddm xfce
 
 Contributions are welcome! If you have suggestions for improvements or new features, feel free to open an issue or submit a pull request.
 
-## License
-
-This project is licensed under the MIT License. See the LICENSE file for details.
-
 ## Acknowledgements
 
 Special thanks to the Arch Linux community for their extensive documentation, Stephan Raabe(My-Linux-4-Work) who's setup scripts were the initial inspiration for me to start this project, and all others who openly share their setup scripts to be used and shared.
+
+## License
+
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
