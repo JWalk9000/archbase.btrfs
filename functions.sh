@@ -442,7 +442,7 @@ gpu_drivers() {
     yN_print "NVIDIA GPU detected. Would you like to install NVIDIA drivers?"
     read -rp "" INSTALL_GPU
     if [[ "$INSTALL_GPU" =~ ^([yY][eE][sS]|[yY])$ ]]; then
-      INSTALL_GPU_DRIVERS="nvidia nvidia-utils"
+      INSTALL_GPU_DRIVERS=("nvidia-dkms" "nvidia-utils" "nvidia-settings" "lib32-nvidia-utils" "egl-wayland")
     else
       info_print "=> Skipping NVIDIA driver installation"
       INSTALL_GPU_DRIVERS=""

@@ -92,6 +92,7 @@ roles:
       - waybar
       - kitty
       - xorg-xwayland
+      - uwsm
       - sddm
     services:
       - sddm
