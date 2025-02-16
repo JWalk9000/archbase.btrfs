@@ -9,19 +9,15 @@ REPO="jwalk9000/archbase.btrfs/dev"
 #  RAW_GITHUB=""
 #  REPO=$LOCALREPO 
 
-source <(curl -s $RAW_GITHUB/$REPO/functions.sh)
-source <(curl -s $RAW_GITHUB/$REPO/colors.sh)
-
-curl -s $RAW_GITHUB/$REPO/roles/roles.yml -o /tmp/roles.yml
-YAML_FILE="/tmp/roles.yml"
-
-
 # Install script dependencies
 PKGDEPS=(
   "jq"
   "yq" 
   "fzf"
 )
+
+curl -s $RAW_GITHUB/$REPO/roles/roles.yml -o /tmp/roles.yml
+YAML_FILE="/tmp/roles.yml"
 
 pacman -Sy
 
@@ -31,6 +27,9 @@ for PKG in "${PKGDEPS[@]}"; do
     pacman -S --noconfirm "$PKG"
   fi
 done
+
+source <(curl -s $RAW_GITHUB/$REPO/functions.sh)
+source <(curl -s $RAW_GITHUB/$REPO/colors.sh)
 
 #####################################################
 # Script variables -- some of these can be pre-set  #
