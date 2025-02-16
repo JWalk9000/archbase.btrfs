@@ -161,12 +161,12 @@ select_locale() {
   info_print "=> Refreshing locale list"
   local INSTRUCTIONS="
   => Start typing and/or use 'up' and 'down' arrows to search for a locale, this uses fuzzy find. 
-      For instance: 'enust' to find 'en_US.UTF-8' ( US English with support for UTF-8 character set).
+     For instance: 'enust' to find 'en_US.UTF-8' ( US English with support for UTF-8 character set).
   
-  Press Enter to select once you have found the desired locale.
-  "
-  sleep 1
-
+     Press Enter to select once you have found the desired locale.
+     
+     Locales available:"
+  
   # Use the locale.gen file from the install image
   cp /etc/locale.gen /tmp/locale.gen
   
@@ -174,7 +174,7 @@ select_locale() {
   mapfile -t locales < <(grep -E '^[#]*[a-z]{2,}_[A-Z]{2,}' /tmp/locale.gen | sed 's/^#//' | awk '{print $1}')
   
   # Use fzf to select a locale
-  selected_locale=$(printf "%s\n" "${locales[@]}" | fzf --prompt="Search:" --header="$INSTRUCTIONS")
+  selected_locale=$(printf "%s\n" "${locales[@]}" | fzf --prompt="Search: " --header="$INSTRUCTIONS")
 
   if [[ -n "$selected_locale" ]]; then
     info_print "Selected locale: $selected_locale"
@@ -190,16 +190,17 @@ select_timezone() {
   display_header
   local INSTRUCTIONS="
   => Start typing and/or use 'up' and 'down' arrows to search for a timezone, this uses fuzzy find. 
-      For instance: 'eulo' to find 'Europe/London', or 'cace' to fine 'Canada/Central'.
+     For instance: 'eulo' to find 'Europe/London', or 'cace' to fine 'Canada/Central'.
   
-  Press Enter to select once you have found the desired locale.
-  "
+     Press Enter to select once you have found the desired locale.
+     
+     Timezones available:"
 
   # Read the available timezones into an array
   mapfile -t timezones < <(timedatectl list-timezones)
   
   # Use fzf to select a timezone
-  selected_timezone=$(printf "%s\n" "${timezones[@]}" | fzf --prompt="$INSTRUCTIONS: " --header="Timezones available:")
+  selected_timezone=$(printf "%s\n" "${timezones[@]}" | fzf --prompt="Search: " --header="$INSTRUCTIONS")
 
   if [[ -n "$selected_timezone" ]]; then
     info_print "Selected timezone: $selected_timezone"
@@ -239,9 +240,9 @@ choose_kernel() {
 
 # Check if system is running in a virtual machine (function).
 detect_vm() {
-  VIRT_TYPE=$(systemd-detect-virt)
   info_print "=> Detecting whether the system is running in a virtual machine"
   sleep 1.5
+  VIRT_TYPE=$(systemd-detect-virt)
   case "$VIRT_TYPE" in
     "oracle")
       info_print "Running in a VirtualBox virtual machine. Installing VirtualBox guest utilities."
@@ -291,18 +292,12 @@ system_role() {
   ENABLE_SVCS+=$(yq -r ".roles.$ROLE.services[]" $YAML_FILE | tr '\n' ' ') 
 }
 
-# Consolidate all package lists (function).
-package_lists() {
-  BASE_PKGS+=$(yq -r '.base.packages[]' $YAML_FILE | tr '\n' ' ')
-  SYSTEM_PKGS="$BASE_PKGS $MICROCODE $INSTALL_GPU_DRIVERS $KERNEL_PKG $ROLE_PKGS $USERPKGS"
-  SYSTEM_PKGS=$(echo $SYSTEM_PKGS | tr -s ' ')
-  ENABLE_SVCS+=$(yq -r ".base.services[]" $YAML_FILE | tr '\n' ' ')
-}
-
 # Choose a role for the system (function).
 choose_role() {
   display_header
-  info_print "Below are some available system roles to choose from. If you created a userpkgs.txt file, you can skip this step or select a role as well."
+  info_print "Below are some available system roles to choose from. If you created a userpkgs.txt file, you can skip this step or select a role as well. 
+  I suggest choosing to install Hyperland if you intend on using the fistBoot.sh script to install a hyperland configuration.
+  "
   info_print "=> Select a role:"
   choices_print "0" ") Skip/Custom"
   choices_print "1" ") Server ----------------- A basic server setup with some common services aiming at a similar experience to Ubuntu Server."
@@ -332,6 +327,14 @@ choose_role() {
       return 0;;
   esac
   
+}
+
+# Consolidate all package lists (function).
+package_lists() {
+  BASE_PKGS+=$(yq -r '.base.packages[]' $YAML_FILE | tr '\n' ' ')
+  SYSTEM_PKGS="$BASE_PKGS $MICROCODE $INSTALL_GPU_DRIVERS $KERNEL_PKG $ROLE_PKGS $USERPKGS"
+  SYSTEM_PKGS=$(echo $SYSTEM_PKGS | tr -s ' ')
+  ENABLE_SVCS+=$(yq -r ".base.services[]" $YAML_FILE | tr '\n' ' ')
 }
 
 # Install user-specified packages (function).

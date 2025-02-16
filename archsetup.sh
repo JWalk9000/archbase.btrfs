@@ -51,7 +51,7 @@ TIMEZONE=""                 # Example: "America/New_York"
 BOOTLOADER="grub"           # 'grub' 'systemd-boot' or 'rEFInd'
 
 
-BASE_PKGS=""                # package list for the base system                
+BASE_PKGS=""                # package list for the base system
 ROLE_PKGS=""                # package list for the selected role
 MICROCODE=""                # 'intel-ucode' 'amd-ucode' or blank
 KERNEL_PKG=""               # on of: 'linux' 'linux-lts' 'linux-hardened' 'linux-zen'
@@ -59,16 +59,7 @@ INSTALL_DISK=""             # Example: "/dev/sda"
 INSTALL_GPU_DRIVERS=""      # 'true' or blank
 DESKTOP_CHOICE=""           # 'true' or blank 
 AUTOLOGIN_CHOICE=""         # 'true' or blank
-
-
-########################################
-# Enable other services here if needed #
-########################################
-ENABLE_SVCS=(
-  ""
-  #"sddm"   # example exra service
-)
-
+ENABLE_SVCS=""              # To add additional services to be enabled at boot, add them to base_services array in the roles.yml file
 
 
 # Display the header at the start
