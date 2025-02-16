@@ -174,7 +174,7 @@ select_locale() {
   mapfile -t locales < <(grep -E '^[#]*[a-z]{2,}_[A-Z]{2,}' /tmp/locale.gen | sed 's/^#//' | awk '{print $1}')
   
   # Use fzf to select a locale
-  selected_locale=$(printf "%s\n" "${locales[@]}" | fzf --prompt="Search:" --header="$instructions")
+  selected_locale=$(printf "%s\n" "${locales[@]}" | fzf --prompt="Search:" --header="$INSTRUCTIONS")
 
   if [[ -n "$selected_locale" ]]; then
     info_print "Selected locale: $selected_locale"
@@ -283,10 +283,6 @@ detect_vm() {
       ;;
   esac
 }
-
-# Call the detect_vm function during your install script
-detect_vm
-
 
 # Package and service lists for the role options
 system_role() {
