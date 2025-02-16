@@ -13,5 +13,15 @@
     "name": "Hyperland-Hyperdots(HYDE)",
     "repo": "https://github.com/JWalk9000/hyprland-hyprdots",
     "installer": "Scripts/install.sh"
+  },
+  {
+    "name": "Kool's Arch - Hyperland",
+    "repo": "https://github.com/JaKooLit/Arch-Hyprland",
+    "installer": "install.sh"
   }
+
+
+
+
+
 ]

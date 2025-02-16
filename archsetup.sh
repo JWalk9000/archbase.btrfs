@@ -127,12 +127,8 @@ until unmount_partitions; do : ; done
 # Erase existing partitions on the target disk
 until erase_partitions; do : ; done
 
-# Start the installation process
-install_message
-
 # create the partitions and filesystems
 until partitioning; do : ; done
-
 
 # Install the base system and user-selected packages
 until detect_vm; do : ; done

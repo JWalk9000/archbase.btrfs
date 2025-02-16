@@ -68,8 +68,9 @@ done
 display_header
 info_print "Welcome to the first boot setup script. This script will guide you through the setup process."
 echo ""
-banner_print "This is the First Boot Setup, where you can install optional GUI setups from a prepopulated .json file. 
-These are not my scripts, however I do plan on adding my own here too. I will do my best to pre-vet 
+banner_print "This is the First Boot Setup, where you can install optional GUI setups from a prepopulated .json file.
+Select 'None' to just install the Yay package manager. 
+These are not my scripts, however I do plan on adding my own here too evetually. I do my best to pre-vet 
 these scripts, however, it is always in your best interest to know and understand any script before running it."
 echo ""
 warning_print "Please be aware that these scripts are not mine, and I cannot guarantee their safety. Procede with caution."
@@ -132,7 +133,7 @@ if [ $AUTOLOGIN_CHOICE == "y" ]; then
   disable_autologin
 fi
 
-Yn_print "firstBoot setup complete. woudl you like to reboot now?"
+Yn_print "firstBoot setup complete. would you like to reboot now?"
 read -rp "" REBOOT_CHOICE
 if [ $REBOOT_CHOICE == "y" ]; then
   reboot
