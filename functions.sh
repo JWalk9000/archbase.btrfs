@@ -763,20 +763,21 @@ install_bootloader() {
   if [ -d /sys/firmware/efi/efivars ]; then
     case "$BOOTLOADER" in
       "systemd-boot")
+        pacman -S --noconfirm systemd-boot efibootmgr
         arch-chroot /mnt /bin/bash <<EOF
         bootctl --path=/boot install
 EOF
         ;;
       "rEFInd")
         arch-chroot /mnt /bin/bash <<EOF
-        pacman -S --noconfirm refind
+        pacman -S --noconfirm refind efibootmgr
         refind-install
         mkrlconf --root / --subvol @ --output /boot/refind_linux.conf
 EOF
         ;;
       *)
         arch-chroot /mnt /bin/bash <<EOF
-         pacman -S --noconfirm grub
+         pacman -S --noconfirm grub efibootmgr
         grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB
         grub-mkconfig -o /boot/grub/grub.cfg
 EOF
