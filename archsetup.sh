@@ -2,7 +2,7 @@
 set -e
 
 RAW_GITHUB="https://raw.githubusercontent.com"
-REPO="jwalk9000/archbase.btrfs/dev"
+REPO="jwalk9000/archbase.btrfs/main"
 
 #LOCALREPO=""    # <-- set this to the path of the local repo if you are using locally. DO NOT INCLUDE THE ROOT '/'.
 #if [ $LOCALREPO != "" ]; then  # WIP - this is not yet implemented.
