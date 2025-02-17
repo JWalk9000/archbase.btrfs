@@ -274,7 +274,7 @@ detect_vm() {
       BASE_PKGS+=$(yq eval -r ".virt.xen.packages[]" $YAML_FILE | tr '\n' ' ')
       ENABLE_SVCS+=$(yq eval -r ".virt.xen.services[]" $YAML_FILE | tr '\n' ' ')
       ;;
-    "")
+    "none" | "")
       echo "Not running in a virtual machine."
       sleep 1.5
       ;;
