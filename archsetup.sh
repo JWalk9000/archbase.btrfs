@@ -51,7 +51,7 @@ TIMEZONE=""                 # Example: "America/New_York"
 BOOTLOADER="grub"           # 'grub' 'systemd-boot' or 'rEFInd'
 
 
-BASE_PKGS=""                # package list for the base system
+SYSTEM_PKGS=""              # package list for the base system
 ROLE_PKGS=""                # package list for the selected role
 MICROCODE=""                # 'intel-ucode' 'amd-ucode' or blank
 KERNEL_PKG=""               # on of: 'linux' 'linux-lts' 'linux-hardened' 'linux-zen'
@@ -87,23 +87,31 @@ until select_timezone; do : ; done
 # Choose a kernel to install
 until choose_kernel; do : ; done
 
+# Detect and install microcode
+until microcode_detector; do : ; done
+
+# Detect and install GPU drivers
+until gpu_drivers; do : ; done
+
+until detect_vm; do : ; done
+
 # Select system role
 until choose_role; do : ; done
 
+# Consolidate package lists before any user packages are added
+until package_lists; do : ; done
+
 # Select additional packages to install
 until user_packages; do : ; done
+
+
+
 
 # offer to enable automatic loggin
 until autologin_choice; do : ; done
 
 # offer to enable Destop environment setup
 until desktop_scripts; do : ; done
-
-# Detect and install microcode
-until microcode_detector; do : ; done
-
-# Detect and install GPU drivers
-until gpu_drivers; do : ; done
 
 # Choose a bootloader to install
 until choose_bootloader; do : ; done
@@ -121,8 +129,6 @@ until erase_partitions; do : ; done
 until partitioning; do : ; done
 
 # Install the base system and user-selected packages
-until detect_vm; do : ; done
-until package_lists; do : ; done
 until install_base_system; do : ; done
 
 

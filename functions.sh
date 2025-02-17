@@ -238,195 +238,6 @@ choose_kernel() {
   esac
 }
 
-# Check if system is running in a virtual machine (function).
-detect_vm() {
-  info_print "=> Detecting whether the system is running in a virtual machine"
-  sleep 1.5
-  VIRT_TYPE=$(systemd-detect-virt)
-  case "$VIRT_TYPE" in
-    "oracle")
-      info_print "Running in a VirtualBox virtual machine. Installing VirtualBox guest utilities."
-      sleep 1.5
-      BASE_PKGS+=$(yq eval -r ".virt.oracle.packages[]" $YAML_FILE | tr '\n' ' ')
-      ENABLE_SVCS+=$(yq eval -r ".virt.oracle.services[]" $YAML_FILE | tr '\n' ' ')
-      ;;
-    "vmware")
-      info_print "Running in a VMware virtual machine. Installing VMware guest utilities."
-      sleep 1.5
-      BASE_PKGS+=$(yq eval -r ".virt.vmware.packages[]" $YAML_FILE | tr '\n' ' ')
-      ENABLE_SVCS+=$(yq eval -r ".virt.vmware.services[]" $YAML_FILE | tr '\n' ' ')
-      ;;
-    "kvm")
-      info_print "Running in a KVM or QEMU virtual machine. Installing QEMU guest utilities." 
-      sleep 1.5
-      BASE_PKGS+=$(yq eval -r ".virt.kvm.packages[]" $YAML_FILE | tr '\n' ' ')
-      ENABLE_SVCS+=$(yq eval -r ".virt.kvm.services[]" $YAML_FILE | tr '\n' ' ')
-      ;;
-    "microsoft")
-      info_print "Running in a Hyper-V virtual machine. Installing Hyper-V guest utilities."
-      sleep 1.5
-      BASE_PKGS+=$(yq eval -r ".virt.microsoft.packages[]" $YAML_FILE | tr '\n' ' ')
-      ENABLE_SVCS+=$(yq eval -r ".virt.microsoft.services[]" $YAML_FILE | tr '\n' ' ')
-      ;;
-    "xen")
-      info_print "Running in a Xen virtual machine. Installing Xen guest utilities."
-      sleep 1.5
-      BASE_PKGS+=$(yq eval -r ".virt.xen.packages[]" $YAML_FILE | tr '\n' ' ')
-      ENABLE_SVCS+=$(yq eval -r ".virt.xen.services[]" $YAML_FILE | tr '\n' ' ')
-      ;;
-    "")
-      echo "Not running in a virtual machine."
-      sleep 1.5
-      ;;
-    *)
-      echo "Unknown virtualization type: $VIRT_TYPE, no additional packages will be installed."
-      sleep 1.5
-      ;;
-  esac
-}
-
-# Package and service lists for the role options
-system_role() {
-  local ROLE=$1
-  ROLE_PKGS=$(yq -r ".roles.$ROLE.packages[]" $YAML_FILE | tr '\n' ' ')
-  ENABLE_SVCS+=$(yq -r ".roles.$ROLE.services[]" $YAML_FILE | tr '\n' ' ') 
-}
-
-# Choose a role for the system (function).
-choose_role() {
-  display_header
-  info_print "Below are some available system roles to choose from. If you created a userpkgs.txt file, you can skip this step or select a role as well. 
-  I suggest choosing to install Hyperland if you intend on using the fistBoot.sh script to install a hyperland configuration.
-  "
-  info_print "=> Select a role:"
-  choices_print "0" ") Skip/Custom"
-  choices_print "1" ") Server ----------------- A basic server setup with some common services aiming at a similar experience to Ubuntu Server."
-  choices_print "2" ") Desktop - XFCE --------- A lightweight desktop environment, similar layout to MS Windows 7."
-  choices_print "3" ") Desktop - KDE Plasma --- A modern, feature-rich desktop environment, similar layout MS Windows 10/11."
-  choices_print "4" ") Desktop - GNOME -------- A modern, feature-rich desktop environment, similar layout to macOS."
-  choices_print "5" ") Desktop - Hyprland ----- A highly customizable dynamic tiling Wayland compositor keyboard-shortcut-driven."
-  select_print "0" "5" "System role: " "SYSTEM_ROLE"
-  case $SYSTEM_ROLE in
-    1)
-      system_role server
-      return 0;;
-    2)
-      system_role xfce
-      return 0;;
-    3)
-      system_role kde
-      return 0;;
-    4)
-      system_role gnome
-      return 0;;
-    5)
-      system_role hypr
-      return 0;;
-    *)
-      ROLE_PKGS=""
-      return 0;;
-  esac
-  
-}
-
-# Consolidate all package lists (function).
-package_lists() {
-  BASE_PKGS+=$(yq -r '.base.packages[]' $YAML_FILE | tr '\n' ' ')
-  SYSTEM_PKGS="$BASE_PKGS $MICROCODE $INSTALL_GPU_DRIVERS $KERNEL_PKG $ROLE_PKGS $USERPKGS"
-  SYSTEM_PKGS=$(echo $SYSTEM_PKGS | tr -s ' ')
-  ENABLE_SVCS+=$(yq -r ".base.services[]" $YAML_FILE | tr '\n' ' ')
-}
-
-# Install user-specified packages (function).
-verify_packages() {
-  VERIFIED_PKGS=""
-  for PKG in $USERPKGS; do
-    if ! pacman -Si "$PKG" > /dev\null; then
-      warning_print "Package $PKG not found in the repositories."
-      Yn_print "Would you like to change the spelling?"
-      read -rp "" CHANGE_SPELLING
-      if [[ "$CHANGE_SPELLING" =~ ^([yY][eE][sS]|[yY])$ ]]; then
-        read -rp "Enter the correct package name: " FIXPKG
-        if pacman -Si "$FIXPKG" > /dev\null; then
-          VERIFIED_PKGS="$VERIFIED_PKGS $FIXPKG"
-        else
-          warning_print "Package $FIXPKG not found in the repositories."
-          Yn_print "Would you like to try again?"
-          read -rp "" TRY_AGAIN
-          if [[ "$TRY_AGAIN" =~ ^([yY][eE][sS]|[yY])$ ]]; then
-            continue
-          else
-            break
-          fi
-        fi
-      else
-        continue
-      fi
-    else
-      VERIFIED_PKGS="$VERIFIED_PKGS $PKG"
-    fi
-  done
-}
-
-user_packages() {
-  display_header
-  info_print "By default, in addition to the base system this installer will also install the following packages:"
-  for PKG in "${BASE_PKGS[@]}"; do
-    info_print "  - $PKG"
-  done
-
-  Yn_print "Did you create a userpkgs.txt file with optional packages to install?"
-  read -rp "" USERPKGS_FILE
-  if [[ "$USERPKGS_FILE" =~ ^([yY][eE][sS]|[yY])$ ]]; then
-    while true; do
-      info_print "=> Checking for userpkgs.txt at $RAW_GITHUB/$REPO/userpkgs.txt"
-      sleep 1
-      if curl --output /dev\null --silent --head --fail "$RAW_GITHUB/$REPO/userpkgs.txt"; then
-        info_print "=> User's packages list will be installed to the system."
-        USERPKGS=$(curl -s "$RAW_GITHUB/$REPO/userpkgs.txt")
-        break
-      else
-        warning_print "No userpkgs.txt file found at $RAW_GITHUB/$REPO/userpkgs.txt."
-        Yn_print "Would you like to try again? Check the file name and location before proceeding."
-        read -rp "" TRY_AGAIN
-        if [[ "$TRY_AGAIN" =~ ^([nN][oO]?|[nN])$ ]]; then
-          break
-        fi
-      fi
-    done
-  fi
-
-  if [[ -z "$USERPKGS" ]]; then
-    Yn_print "Would you like to enter the packages manually as a space-separated list?"
-    read -rp "" ENTER_MANUALLY
-    if [[ "$ENTER_MANUALLY" =~ ^([yY][eE][sS]|[yY])$ ]]; then
-      info_print "Enter the packages you would like to install, separated by a space:"
-      read -rp "" USERPKGS
-      info_print "I will now check that those packages are available to install."
-      sleep 1
-      verify_packages
-      USERPKGS=$VERIFIED_PKGS
-    fi
-  fi
-
-  if [[ -n "$USERPKGS" ]]; then
-    info_print "The following packages will be installed: $USERPKGS"
-  else
-    warning_print "No packages to install."
-  fi
-}
-
-# Enable Auto-login for the user (function).
-autologin_choice() {
-  display_header
-  Yn_print "Would you like to enable autologin for the $NEW_USER?"
-  read -rp "" AUTOLOGIN_CHOICE
-  if [[ "$AUTOLOGIN_CHOICE" =~ ^([yY][eE][sS]|[yY])$ ]]; then
-    AUTOLOGIN_CHOICE="true"
-    info_print "=> Setting up autologin for the first boot"
-  fi
-}    
-
 # Microcode detector (function).
 microcode_detector () {
   display_header
@@ -518,6 +329,214 @@ choose_bootloader() {
     BOOTLOADER="grub"
   fi
 }
+
+# Check if system is running in a virtual machine (function).
+detect_vm() {
+  info_print "=> Detecting whether the system is running in a virtual machine"
+  sleep 1.5
+  VIRT_TYPE=$(systemd-detect-virt)
+  case "$VIRT_TYPE" in
+    "oracle")
+      info_print "Running in a VirtualBox virtual machine. Installing VirtualBox guest utilities."
+      sleep 1.5
+      BASE_PKGS+=$(yq eval -r ".virt.oracle.packages[]" $YAML_FILE | tr '\n' ' ')
+      ENABLE_SVCS+=$(yq eval -r ".virt.oracle.services[]" $YAML_FILE | tr '\n' ' ')
+      ;;
+    "vmware")
+      info_print "Running in a VMware virtual machine. Installing VMware guest utilities."
+      sleep 1.5
+      BASE_PKGS+=$(yq eval -r ".virt.vmware.packages[]" $YAML_FILE | tr '\n' ' ')
+      ENABLE_SVCS+=$(yq eval -r ".virt.vmware.services[]" $YAML_FILE | tr '\n' ' ')
+      ;;
+    "kvm")
+      info_print "Running in a KVM or QEMU virtual machine. Installing QEMU guest utilities." 
+      sleep 1.5
+      BASE_PKGS+=$(yq eval -r ".virt.kvm.packages[]" $YAML_FILE | tr '\n' ' ')
+      ENABLE_SVCS+=$(yq eval -r ".virt.kvm.services[]" $YAML_FILE | tr '\n' ' ')
+      ;;
+    "microsoft")
+      info_print "Running in a Hyper-V virtual machine. Installing Hyper-V guest utilities."
+      sleep 1.5
+      BASE_PKGS+=$(yq eval -r ".virt.microsoft.packages[]" $YAML_FILE | tr '\n' ' ')
+      ENABLE_SVCS+=$(yq eval -r ".virt.microsoft.services[]" $YAML_FILE | tr '\n' ' ')
+      ;;
+    "xen")
+      info_print "Running in a Xen virtual machine. Installing Xen guest utilities."
+      sleep 1.5
+      BASE_PKGS+=$(yq eval -r ".virt.xen.packages[]" $YAML_FILE | tr '\n' ' ')
+      ENABLE_SVCS+=$(yq eval -r ".virt.xen.services[]" $YAML_FILE | tr '\n' ' ')
+      ;;
+    "none" | "")
+      echo "Not running in a virtual machine."
+      sleep 1.5
+      ;;
+    *)
+      echo "Unknown virtualization type: $VIRT_TYPE, no additional packages will be installed."
+      sleep 1.5
+      ;;
+  esac
+}
+
+# Package and service lists for the role options
+system_role() {
+  local ROLE=$1
+  ROLE_PKGS=$(yq -r ".roles.$ROLE.packages[]" $YAML_FILE | tr '\n' ' ')
+  ENABLE_SVCS+=$(yq -r ".roles.$ROLE.services[]" $YAML_FILE | tr '\n' ' ') 
+}
+
+# Choose a role for the system (function).
+choose_role() {
+  display_header
+  info_print "Below are some available system roles to choose from. If you created a userpkgs.txt file, you can skip this step or select a role as well. 
+  I suggest choosing to install Hyperland if you intend on using the fistBoot.sh script to install a hyperland configuration.
+  "
+  info_print "=> Select a role:"
+  choices_print "0" ") Skip/Custom"
+  choices_print "1" ") Server ----------------- A basic server setup with some common services aiming at a similar experience to Ubuntu Server."
+  choices_print "2" ") Desktop - XFCE --------- A lightweight desktop environment, similar layout to MS Windows 7."
+  choices_print "3" ") Desktop - KDE Plasma --- A modern, feature-rich desktop environment, similar layout MS Windows 10/11."
+  choices_print "4" ") Desktop - GNOME -------- A modern, feature-rich desktop environment, similar layout to macOS."
+  choices_print "5" ") Desktop - Hyprland ----- A highly customizable dynamic tiling Wayland compositor keyboard-shortcut-driven."
+  select_print "0" "5" "System role: " "SYSTEM_ROLE"
+  case $SYSTEM_ROLE in
+    1)
+      system_role server
+      return 0;;
+    2)
+      system_role xfce
+      return 0;;
+    3)
+      system_role kde
+      return 0;;
+    4)
+      system_role gnome
+      return 0;;
+    5)
+      system_role hypr
+      return 0;;
+    *)
+      ROLE_PKGS=""
+      return 0;;
+  esac
+  
+}
+
+# Consolidate all package lists (function).
+package_lists() {
+  BASE_PKGS+=$(yq -r '.base.packages[]' $YAML_FILE | tr '\n' ' ')
+  SYSTEM_PKGS+="$BASE_PKGS $MICROCODE $INSTALL_GPU_DRIVERS $KERNEL_PKG $ROLE_PKGS $USERPKGS"
+  SYSTEM_PKGS+=$(echo $SYSTEM_PKGS | tr -s ' ')
+  ENABLE_SVCS+=$(yq -r ".base.services[]" $YAML_FILE | tr '\n' ' ')
+}
+
+# Install user-specified packages (function).
+verify_packages() {
+  VERIFIED_PKGS=""
+  for PKG in $USERPKGS; do
+    if ! pacman -Si "$PKG" > /dev\null; then
+      warning_print "Package $PKG not found in the repositories."
+      Yn_print "Would you like to change the spelling?"
+      read -rp "" CHANGE_SPELLING
+      if [[ "$CHANGE_SPELLING" =~ ^([yY][eE][sS]|[yY])$ ]]; then
+        read -rp "Enter the correct package name: " FIXPKG
+        if pacman -Si "$FIXPKG" > /dev\null; then
+          VERIFIED_PKGS="$VERIFIED_PKGS $FIXPKG"
+        else
+          warning_print "Package $FIXPKG not found in the repositories."
+          Yn_print "Would you like to try again?"
+          read -rp "" TRY_AGAIN
+          if [[ "$TRY_AGAIN" =~ ^([yY][eE][sS]|[yY])$ ]]; then
+            continue
+          else
+            break
+          fi
+        fi
+      else
+        continue
+      fi
+    else
+      VERIFIED_PKGS="$VERIFIED_PKGS $PKG"
+    fi
+  done
+}
+
+# Display Packages
+display_packages() {
+  info_print "These are the packages that will be installed:"
+  for PKG in $SYSTEM_PKGS; do
+    info_print "  - $PKG"
+  done  
+  read -rp "$(echo -e ${INFO}Press ${INPUT}Enter${INFO} to proceed, ${INPUT}CTRL+C${INFO} to abort...${RESET})"
+}
+
+# Display Services
+display_services() {
+  info_print "These are the Services that will be Enabled:"
+  for SVC in $ENABLE_SVCS; do
+    info_print "  - $SVC"
+  done  
+  read -rp "$(echo -e ${INFO}Press ${INPUT}Enter${INFO} to proceed, ${INPUT}CTRL+C${INFO} to abort...${RESET})"
+}
+
+
+
+
+
+user_packages() {
+  display_header
+  display_packages
+  display_header
+  Yn_print "Did you create a userpkgs.txt file with additional packages to install?"
+  read -rp "" USERPKGS_FILE
+  if [[ "$USERPKGS_FILE" =~ ^([yY][eE][sS]|[yY])$ ]]; then
+    while true; do
+      info_print "=> Checking for userpkgs.txt at $RAW_GITHUB/$REPO/userpkgs.txt"
+      sleep 1
+      if curl --output /dev\null --silent --head --fail "$RAW_GITHUB/$REPO/userpkgs.txt"; then
+        info_print "=> User's packages list will be installed to the system."
+        USERPKGS=$(curl -s "$RAW_GITHUB/$REPO/userpkgs.txt")
+        break
+      else
+        warning_print "No userpkgs.txt file found at $RAW_GITHUB/$REPO/userpkgs.txt."
+        Yn_print "Would you like to try again? Check the file name and location before proceeding."
+        read -rp "" TRY_AGAIN
+        if [[ "$TRY_AGAIN" =~ ^([nN][oO]?|[nN])$ ]]; then
+          break
+        fi
+      fi
+    done
+  fi
+
+  if [[ -z "$USERPKGS" ]]; then
+    Yn_print "Would you like to enter the packages manually as a space-separated list?"
+    read -rp "" ENTER_MANUALLY
+    if [[ "$ENTER_MANUALLY" =~ ^([yY][eE][sS]|[yY])$ ]]; then
+      info_print "Enter the packages you would like to install, separated by a space:"
+      read -rp "" USERPKGS
+      info_print "I will now check that those packages are available to install."
+      sleep 1
+      verify_packages
+      USERPKGS=$VERIFIED_PKGS
+    fi
+  fi
+
+  if [[ -n "$USERPKGS" ]]; then
+    info_print "The following packages will be installed: $USERPKGS"
+  else
+    warning_print "No packages to install."
+  fi
+}
+
+# Enable Auto-login for the user (function).
+autologin_choice() {
+  display_header
+  Yn_print "Would you like to enable autologin for the $NEW_USER?"
+  read -rp "" AUTOLOGIN_CHOICE
+  if [[ "$AUTOLOGIN_CHOICE" =~ ^([yY][eE][sS]|[yY])$ ]]; then
+    AUTOLOGIN_CHOICE="true"
+    info_print "=> Setting up autologin for the first boot"
+  fi
+}    
 
 # List block devices and prompt user for target install disk (function).
 target_disk() {
@@ -689,20 +708,8 @@ partitioning() {
 
 install_base_system() {
   install_message
-  info_print "These are the packages that will be installed:"
-  for PKG in $SYSTEM_PKGS; do
-    info_print "  - $PKG"
-  done  
-  read -rp "$(echo -e ${INFO}Press ${INPUT}Enter${INFO} to proceed, ${INPUT}CTRL+C${INFO} to abort...${RESET})"
-      echo ""
-      info_print "These are the Services that will be Enabled:"
-  for SVC in $ENABLE_SVCS; do
-    info_print "  - $SVC"
-  done  
-  read -rp "$(echo -e ${INFO}Press ${INPUT}Enter${INFO} to proceed, ${INPUT}CTRL+C${INFO} to abort...${RESET})"
-  info_print "=> Installing base system with selected role or custom packages"
-  sleep 2
-  pacstrap /mnt $SYSTEM_PKGS
+  info_print "=> Installing base system with selected role and custom packages"
+  sleep 2  pacstrap /mnt $SYSTEM_PKGS
 }
 
 set_timezone() {
