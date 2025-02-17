@@ -2,7 +2,7 @@
 set -e
 
 RAW_GITHUB="https://raw.githubusercontent.com"
-REPO="jwalk9000/archbase.btrfs/main"
+REPO="jwalk9000/archbase.btrfs/dev" 
 
 #LOCALREPO=""    # <-- set this to the path of the local repo if you are using locally. DO NOT INCLUDE THE ROOT '/'.
 #if [ $LOCALREPO != "" ]; then  # WIP - this is not yet implemented.
@@ -56,7 +56,7 @@ ROLE_PKGS=""                # package list for the selected role
 MICROCODE=""                # 'intel-ucode' 'amd-ucode' or blank
 KERNEL_PKG=""               # on of: 'linux' 'linux-lts' 'linux-hardened' 'linux-zen'
 INSTALL_DISK=""             # Example: "/dev/sda"
-INSTALL_GPU_DRIVERS=""      # 'true' or blank
+GPU_DRIVERS=""              # 'true' or blank
 DESKTOP_CHOICE=""           # 'true' or blank 
 AUTOLOGIN_CHOICE=""         # 'true' or blank
 ENABLE_SVCS=""              # To add additional services to be enabled at boot, add them to base_services array in the roles.yml file
@@ -78,6 +78,9 @@ until select_root_password; do : ; done
 # Create a new user
 until create_new_user; do : ; done
 
+# offer to enable automatic loggin on tty1
+until autologin_choice; do : ; done
+
 # Select locale
 until select_locale; do : ; done
 
@@ -93,6 +96,7 @@ until microcode_detector; do : ; done
 # Detect and install GPU drivers
 until gpu_drivers; do : ; done
 
+# Detect if running in a VM
 until detect_vm; do : ; done
 
 # Select system role
@@ -103,12 +107,6 @@ until package_lists; do : ; done
 
 # Select additional packages to install
 until user_packages; do : ; done
-
-
-
-
-# offer to enable automatic loggin
-until autologin_choice; do : ; done
 
 # offer to enable Destop environment setup
 until desktop_scripts; do : ; done

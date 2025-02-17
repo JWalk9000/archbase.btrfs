@@ -265,10 +265,10 @@ gpu_drivers() {
     yN_print "NVIDIA GPU detected. Would you like to install NVIDIA drivers?"
     read -rp "" INSTALL_GPU
     if [[ "$INSTALL_GPU" =~ ^([yY][eE][sS]|[yY])$ ]]; then
-      INSTALL_GPU_DRIVERS=("nvidia-dkms" "nvidia-utils" "nvidia-settings" "lib32-nvidia-utils" "egl-wayland")
+      GPU_DRIVERS=("nvidia-dkms" "nvidia-utils" "nvidia-settings" "lib32-nvidia-utils" "egl-wayland")
     else
       info_print "=> Skipping NVIDIA driver installation"
-      INSTALL_GPU_DRIVERS=""
+      GPU_DRIVERS=""
       sleep 1.5
     fi
   # Check for AMD GPU
@@ -277,10 +277,10 @@ gpu_drivers() {
     yN_print "AMD GPU detected. Would you like to install AMD drivers?"
     read -rp "" INSTALL_GPU
     if [[ "$INSTALL_GPU" =~ ^([yY][eE][sS]|[yY])$ ]]; then
-      INSTALL_GPU_DRIVERS="xf86-video-amdgpu"
+      GPU_DRIVERS="xf86-video-amdgpu"
     else
       info_print "=> Skipping AMD driver installation"
-      INSTALL_GPU_DRIVERS=""
+      GPU_DRIVERS=""
       sleep 1.5
     fi
   # Check for Intel GPU
@@ -289,15 +289,15 @@ gpu_drivers() {
     yN_print "Intel GPU detected. Would you like to install Intel drivers?"
     read -rp "" INSTALL_GPU
     if [[ "$INSTALL_GPU" =~ ^([yY][eE][sS]|[yY])$ ]]; then
-      INSTALL_GPU_DRIVERS="xf86-video-intel"
+      GPU_DRIVERS="xf86-video-intel"
     else
       info_print "=> Skipping Intel driver installation"
-      INSTALL_GPU_DRIVERS=""
+      GPU_DRIVERS=""
       sleep 1.5
     fi
   else
     info_print "No dedicated GPU detected."
-    INSTALL_GPU_DRIVERS=""
+    GPU_DRIVERS=""
     sleep 1.5
   fi
 }
@@ -332,6 +332,7 @@ choose_bootloader() {
 
 # Check if system is running in a virtual machine (function).
 detect_vm() {
+  display_header
   info_print "=> Detecting whether the system is running in a virtual machine"
   sleep 1.5
   VIRT_TYPE=$(systemd-detect-virt)
@@ -771,19 +772,20 @@ install_bootloader() {
     case "$BOOTLOADER" in
       "systemd-boot")
         arch-chroot /mnt /bin/bash <<EOF
+        pacman -S --noconfirm systemd-boot efibootmgr
         bootctl --path=/boot install
 EOF
         ;;
       "rEFInd")
         arch-chroot /mnt /bin/bash <<EOF
-        pacman -S --noconfirm refind
+        pacman -S --noconfirm refind efibootmgr
         refind-install
         mkrlconf --root / --subvol @ --output /boot/refind_linux.conf
 EOF
         ;;
       *)
         arch-chroot /mnt /bin/bash <<EOF
-         pacman -S --noconfirm grub
+         pacman -S --noconfirm grub efibootmgr
         grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB
         grub-mkconfig -o /boot/grub/grub.cfg
 EOF
