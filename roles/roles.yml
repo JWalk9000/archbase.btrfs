@@ -23,7 +23,6 @@ roles:
       - less
       - rsync
       - avahi
-      - avahi-tools
       - reflector
       - python
       - tmux
