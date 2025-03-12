@@ -502,9 +502,9 @@ choose_bootloader() {
     #choices_print "   3)"" rEFInd"
     select_print "1" "3" "Bootloader" "BOOTLOADER_CHOICE"
     case "$BOOTLOADER_CHOICE" in
-      2)
-        BOOTLOADER="systemd-boot"
-        ;;
+      #2)
+      #  BOOTLOADER="systemd-boot"
+      #  ;;
       #3)
       #  BOOTLOADER="rEFInd"
       #  ;;

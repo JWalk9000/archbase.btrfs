@@ -31,6 +31,11 @@ I have done my best to make this user-friendly for newer linux users, while cate
 - Make running it locally after cloning easier.
 - Interactive partioning, and by extension, installing alongside another OS.
 - Snapshot setup and scheduling.
+- Standardization for importing and installing user DE dependancies and configurations.
+
+### Known Issues
+
+- Currently only grub works for a boot loader, because of this I have temporarily disabled displaying other options until I can fix this.(contribution welcome)
 
 ## Running As-Is
 
