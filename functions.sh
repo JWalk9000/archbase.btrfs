@@ -32,15 +32,14 @@ EOF
 
 # Function to greet user, and provide information about the script
 greet_user() {
-  echo -e "${INFO}"
-  cat << EOL
+  echo -e "${INFO}
   Welcome to my Arch Linux Base installation script.
   This script will streamline the installation process, creating a minimal Arch Linux system.
   After entering your choices it will create a boot partition, and a system partition using Btrfs 
   and Btrfs sudirectories for the 'home', 'root', and '.snapshots' subdirectories before 
-  installing the base system.
-  
-EOL
+  installing the base system.${RESET}"
+  Echo ""
+  until read_verify; do : ; done
 }
 
 # Display warning message.
@@ -313,9 +312,9 @@ choose_bootloader() {
     #choices_print "   3)"" rEFInd"
     select_print "1" "3" "Bootloader" "BOOTLOADER_CHOICE"
     case "$BOOTLOADER_CHOICE" in
-      2)
-        BOOTLOADER="systemd-boot"
-        ;;
+      #2)
+      #  BOOTLOADER="systemd-boot"
+      #  ;;
       #3)
       #  BOOTLOADER="rEFInd"
       #  ;;
@@ -700,6 +699,16 @@ partitioning() {
   fi
 }
 
+
+read_verify() {
+  local VARIFY=true
+  if [[ "$VARIFY" != "true" ]]; then
+    warning_print "Script review Not Verified"
+    warning_print "You will need to verify that you have reviewed the script before you are able to proceed. "
+    read -rp "Press Enter to exit the script" 
+    exit 1
+  fi
+}
 
 ####################################################################################################
 #

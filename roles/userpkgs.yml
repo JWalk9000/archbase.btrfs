@@ -1,0 +1,7 @@
+packages:
+  system:
+    - fastfetch
+  user:
+    - kate
+services:
+  -
