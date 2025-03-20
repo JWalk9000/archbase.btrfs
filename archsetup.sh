@@ -15,7 +15,7 @@ PKGDEPS=(
 
 pacman -Sy
 
-info_print "=> Installing script dependencies"
+echo "=> Installing script dependencies"
 for PKG in "${PKGDEPS[@]}"; do
   if ! pacman -Qs "$PKG" > /dev/null ; then
     pacman -S --noconfirm "$PKG"
@@ -24,9 +24,9 @@ done
 
 # Check if /tmp/archbase directory exists and is not empty
 if [ -d /tmp/archbase ] && [ "$(ls -A /tmp/archbase)" ]; then
-  info_print "=> /tmp/archbase directory exists and is not empty. Proceeding to launch the main script."
+  echo "=> /tmp/archbase directory exists and is not empty. Proceeding to launch the main script."
 else
-  info_print "=> /tmp/archbase directory does not exist or is empty. Cloning the repository."
+  echo "=> /tmp/archbase directory does not exist or is empty. Cloning the repository."
   git clone -b $BRANCH --single-branch https://github.com/$REPO.git /tmp/archbase
   cd /tmp/archbase
   chmod +x /tmp/archbase/*.sh
