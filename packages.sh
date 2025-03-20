@@ -7,11 +7,14 @@ set -e
 # Load required functions and variables
 source /tmp/archbase/colors.sh
 source /tmp/archbase/functions.sh
+sourch /tmp/archbase/roles/
 
 # Variables to store user inputs
 USERPKGS=()
 VERIFIED_PKGS=()
 ENABLE_SVCS=()
+ROLES_YAML="./roles/roles.yml"
+USER_YAML="./roles/userpkgs.yml"
 
 # Function to load user packages from YAML file
 load_user_packages() {
@@ -20,6 +23,43 @@ load_user_packages() {
   else
     warning_print "No userpkgs.yml file found."
   fi
+}
+
+# Choose a role for the system (function).
+choose_role() {
+  display_header
+  info_print "Below are some available system roles to choose from. If you created a userpkgs.txt file, you can skip this step or select a role as well. 
+  I suggest choosing to install Hyperland if you intend on using the fistBoot.sh script to install a hyperland configuration.
+  "
+  info_print "=> Select a role:"
+  choices_print "0" ") Skip/Custom"
+  choices_print "1" ") Server ----------------- A basic server setup with some common services aiming at a similar experience to Ubuntu Server."
+  choices_print "2" ") Desktop - XFCE --------- A lightweight desktop environment, similar layout to MS Windows 7."
+  choices_print "3" ") Desktop - KDE Plasma --- A modern, feature-rich desktop environment, similar layout MS Windows 10/11."
+  choices_print "4" ") Desktop - GNOME -------- A modern, feature-rich desktop environment, similar layout to macOS."
+  choices_print "5" ") Desktop - Hyprland ----- A highly customizable dynamic tiling Wayland compositor keyboard-shortcut-driven."
+  select_print "0" "5" "System role: " "SYSTEM_ROLE"
+  case $SYSTEM_ROLE in
+    1)
+      system_role server
+      return 0;;
+    2)
+      system_role xfce
+      return 0;;
+    3)
+      system_role kde
+      return 0;;
+    4)
+      system_role gnome
+      return 0;;
+    5)
+      system_role hypr
+      return 0;;
+    *)
+      ROLE_PKGS=""
+      return 0;;
+  esac
+  
 }
 
 # Function to verify user packages
@@ -179,6 +219,21 @@ packages_and_services() {
       *) echo "Invalid option. Please try again." ;;
     esac
   done
+}
+
+# Package and service lists for the role options
+system_role() {
+  local ROLE=$1
+  ROLE_PKGS=$(yq -r ".roles.$ROLE.packages[]" $ROLES_YAML | tr '\n' ' ')
+  ENABLE_SVCS+=$(yq -r ".roles.$ROLE.services[]" $ROLES_YAML | tr '\n' ' ') 
+}
+
+# Consolidate all package lists
+package_lists() {
+  BASE_PKGS+=$(yq -r '.base.packages[]' $ROLES_YAML | tr '\n' ' ')
+  SYSTEM_PKGS="$BASE_PKGS $MICROCODE $INSTALL_GPU_DRIVERS $KERNEL_PKG $ROLE_PKGS $USERPKGS"
+  SYSTEM_PKGS=$(echo $SYSTEM_PKGS | tr -s ' ')
+  ENABLE_SVCS+=$(yq -r ".base.services[]" $ROLES_YAML | tr '\n' ' ')
 }
 
 # Call the main function

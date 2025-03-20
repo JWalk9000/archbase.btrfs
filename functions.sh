@@ -36,9 +36,9 @@ greet_user() {
   Welcome to my Arch Linux Base installation script.
   This script will streamline the installation process, creating a minimal Arch Linux system.
   After entering your choices it will create a boot partition, and a system partition using Btrfs 
-  and Btrfs sudirectories for the 'home', 'root', and '.snapshots' subdirectories before 
+  and Btrfs subdirectories for the 'home', 'root', and '.snapshots' subdirectories before 
   installing the base system.${RESET}"
-  Echo ""
+  echo ""
   until read_verify; do : ; done
 }
 
@@ -237,101 +237,8 @@ choose_kernel() {
   esac
 }
 
-# Microcode detector (function).
-microcode_detector () {
-  display_header
-    CPU=$(grep vendor_id /proc/cpuinfo)
-    if [[ "$CPU" == *"AuthenticAMD"* ]]; then
-        info_print "An AMD CPU has been detected, the AMD microcode will be installed."
-        MICROCODE="amd-ucode"
-        sleep 2
-    else
-        info_print "An Intel CPU has been detected, the Intel microcode will be installed."
-        MICROCODE="intel-ucode"
-        sleep 2
-    fi
-}
-
-# Detect and install GPU drivers (function).
-gpu_drivers() {
-  display_header
-  info_print "=> Checking for a dedicated GPU"
-  sleep 1.5
-
-  # Check for NVIDIA GPU
-  if lspci | grep -i "NVIDIA" | grep -i "VGA compatible controller"; then
-    display_header
-    yN_print "NVIDIA GPU detected. Would you like to install NVIDIA drivers?"
-    read -rp "" INSTALL_GPU
-    if [[ "$INSTALL_GPU" =~ ^([yY][eE][sS]|[yY])$ ]]; then
-      GPU_DRIVERS=("nvidia-dkms" "nvidia-utils" "nvidia-settings" "lib32-nvidia-utils" "egl-wayland")
-    else
-      info_print "=> Skipping NVIDIA driver installation"
-      GPU_DRIVERS=""
-      sleep 1.5
-    fi
-  # Check for AMD GPU
-  elif lspci | grep -i "AMD/ATI" | grep -i "VGA compatible controller"; then
-    display_header
-    yN_print "AMD GPU detected. Would you like to install AMD drivers?"
-    read -rp "" INSTALL_GPU
-    if [[ "$INSTALL_GPU" =~ ^([yY][eE][sS]|[yY])$ ]]; then
-      GPU_DRIVERS="xf86-video-amdgpu"
-    else
-      info_print "=> Skipping AMD driver installation"
-      GPU_DRIVERS=""
-      sleep 1.5
-    fi
-  # Check for Intel GPU
-  elif lspci | grep -i "Intel Corporation" | grep -i "VGA compatible controller"; then
-    display_header
-    yN_print "Intel GPU detected. Would you like to install Intel drivers?"
-    read -rp "" INSTALL_GPU
-    if [[ "$INSTALL_GPU" =~ ^([yY][eE][sS]|[yY])$ ]]; then
-      GPU_DRIVERS="xf86-video-intel"
-    else
-      info_print "=> Skipping Intel driver installation"
-      GPU_DRIVERS=""
-      sleep 1.5
-    fi
-  else
-    info_print "No dedicated GPU detected."
-    GPU_DRIVERS=""
-    sleep 1.5
-  fi
-}
-
-# Choose a bootloader to install (function).
-choose_bootloader() {
-  display_header
-  if [ -d /sys/firmware/efi/efivars ]; then
-    EFIBOOTMGR="efibootmgr"
-    info_print "=> EFI system detected. Choose a bootloader to install:"
-    choices_print " * 1)"" GRUB"
-    choices_print "   2)"" systemd-boot"
-    #choices_print "   3)"" rEFInd"
-    select_print "1" "3" "Bootloader" "BOOTLOADER_CHOICE"
-    case "$BOOTLOADER_CHOICE" in
-      #2)
-      #  BOOTLOADER="systemd-boot"
-      #  ;;
-      #3)
-      #  BOOTLOADER="rEFInd"
-      #  ;;
-      *)
-        BOOTLOADER="grub"
-        ;;
-    esac
-  else
-    info_print "=> BIOS system detected. GRUB bootloader will be installed:"
-    sleep 2
-    BOOTLOADER="grub"
-  fi
-}
-
 # Check if system is running in a virtual machine (function).
 detect_vm() {
-  display_header
   info_print "=> Detecting whether the system is running in a virtual machine"
   sleep 1.5
   VIRT_TYPE=$(systemd-detect-virt)
@@ -377,156 +284,6 @@ detect_vm() {
   esac
 }
 
-# Package and service lists for the role options
-system_role() {
-  local ROLE=$1
-  ROLE_PKGS=$(yq -r ".roles.$ROLE.packages[]" $YAML_FILE | tr '\n' ' ')
-  ENABLE_SVCS+=$(yq -r ".roles.$ROLE.services[]" $YAML_FILE | tr '\n' ' ') 
-}
-
-# Choose a role for the system (function).
-choose_role() {
-  display_header
-  info_print "Below are some available system roles to choose from. If you created a userpkgs.txt file, you can skip this step or select a role as well. 
-  I suggest choosing to install Hyperland if you intend on using the fistBoot.sh script to install a hyperland configuration.
-  "
-  info_print "=> Select a role:"
-  choices_print "0" ") Skip/Custom"
-  choices_print "1" ") Server ----------------- A basic server setup with some common services aiming at a similar experience to Ubuntu Server."
-  choices_print "2" ") Desktop - XFCE --------- A lightweight desktop environment, similar layout to MS Windows 7."
-  choices_print "3" ") Desktop - KDE Plasma --- A modern, feature-rich desktop environment, similar layout MS Windows 10/11."
-  choices_print "4" ") Desktop - GNOME -------- A modern, feature-rich desktop environment, similar layout to macOS."
-  choices_print "5" ") Desktop - Hyprland ----- A highly customizable dynamic tiling Wayland compositor keyboard-shortcut-driven."
-  select_print "0" "5" "System role: " "SYSTEM_ROLE"
-  case $SYSTEM_ROLE in
-    1)
-      system_role server
-      return 0;;
-    2)
-      system_role xfce
-      return 0;;
-    3)
-      system_role kde
-      return 0;;
-    4)
-      system_role gnome
-      return 0;;
-    5)
-      system_role hypr
-      return 0;;
-    *)
-      ROLE_PKGS=""
-      return 0;;
-  esac
-  
-}
-
-# Consolidate all package lists (function).
-package_lists() {
-  BASE_PKGS+=$(yq -r '.base.packages[]' $YAML_FILE | tr '\n' ' ')
-  SYSTEM_PKGS+="$BASE_PKGS $MICROCODE $INSTALL_GPU_DRIVERS $KERNEL_PKG $ROLE_PKGS $USERPKGS"
-  SYSTEM_PKGS+=$(echo $SYSTEM_PKGS | tr -s ' ')
-  ENABLE_SVCS+=$(yq -r ".base.services[]" $YAML_FILE | tr '\n' ' ')
-}
-
-# Install user-specified packages (function).
-verify_packages() {
-  VERIFIED_PKGS=""
-  for PKG in $USERPKGS; do
-    if ! pacman -Si "$PKG" > /dev\null; then
-      warning_print "Package $PKG not found in the repositories."
-      Yn_print "Would you like to change the spelling?"
-      read -rp "" CHANGE_SPELLING
-      if [[ "$CHANGE_SPELLING" =~ ^([yY][eE][sS]|[yY])$ ]]; then
-        read -rp "Enter the correct package name: " FIXPKG
-        if pacman -Si "$FIXPKG" > /dev\null; then
-          VERIFIED_PKGS="$VERIFIED_PKGS $FIXPKG"
-        else
-          warning_print "Package $FIXPKG not found in the repositories."
-          Yn_print "Would you like to try again?"
-          read -rp "" TRY_AGAIN
-          if [[ "$TRY_AGAIN" =~ ^([yY][eE][sS]|[yY])$ ]]; then
-            continue
-          else
-            break
-          fi
-        fi
-      else
-        continue
-      fi
-    else
-      VERIFIED_PKGS="$VERIFIED_PKGS $PKG"
-    fi
-  done
-}
-
-# Display Packages
-display_packages() {
-  info_print "These are the packages that will be installed:"
-  for PKG in $SYSTEM_PKGS; do
-    info_print "  - $PKG"
-  done  
-  read -rp "$(echo -e ${INFO}Press ${INPUT}Enter${INFO} to proceed, ${INPUT}CTRL+C${INFO} to abort...${RESET})"
-}
-
-# Display Services
-display_services() {
-  info_print "These are the Services that will be Enabled:"
-  for SVC in $ENABLE_SVCS; do
-    info_print "  - $SVC"
-  done  
-  read -rp "$(echo -e ${INFO}Press ${INPUT}Enter${INFO} to proceed, ${INPUT}CTRL+C${INFO} to abort...${RESET})"
-}
-
-
-
-
-
-user_packages() {
-  display_header
-  display_packages
-  display_header
-  Yn_print "Did you create a userpkgs.txt file with additional packages to install?"
-  read -rp "" USERPKGS_FILE
-  if [[ "$USERPKGS_FILE" =~ ^([yY][eE][sS]|[yY])$ ]]; then
-    while true; do
-      info_print "=> Checking for userpkgs.txt at $RAW_GITHUB/$REPO/userpkgs.txt"
-      sleep 1
-      if curl --output /dev\null --silent --head --fail "$RAW_GITHUB/$REPO/userpkgs.txt"; then
-        info_print "=> User's packages list will be installed to the system."
-        USERPKGS=$(curl -s "$RAW_GITHUB/$REPO/userpkgs.txt")
-        break
-      else
-        warning_print "No userpkgs.txt file found at $RAW_GITHUB/$REPO/userpkgs.txt."
-        Yn_print "Would you like to try again? Check the file name and location before proceeding."
-        read -rp "" TRY_AGAIN
-        if [[ "$TRY_AGAIN" =~ ^([nN][oO]?|[nN])$ ]]; then
-          break
-        fi
-      fi
-    done
-  fi
-
-  if [[ -z "$USERPKGS" ]]; then
-    Yn_print "Would you like to enter the packages manually as a space-separated list?"
-    read -rp "" ENTER_MANUALLY
-    if [[ "$ENTER_MANUALLY" =~ ^([yY][eE][sS]|[yY])$ ]]; then
-      info_print "Enter the packages you would like to install, separated by a space:"
-      read -rp "" USERPKGS
-      info_print "I will now check that those packages are available to install."
-      sleep 1
-      verify_packages
-      USERPKGS=$VERIFIED_PKGS
-    fi
-  fi
-
-  if [[ -n "$USERPKGS" ]]; then
-    info_print "The following packages will be installed: $USERPKGS"
-  else
-    warning_print "No packages to install."
-  fi
-}
-
 # Enable Auto-login for the user (function).
 autologin_choice() {
   display_header
@@ -537,6 +294,98 @@ autologin_choice() {
     info_print "=> Setting up autologin for the first boot"
   fi
 }    
+
+# Microcode detector (function).
+microcode_detector () {
+  display_header
+    CPU=$(grep vendor_id /proc/cpuinfo)
+    if [[ "$CPU" == *"AuthenticAMD"* ]]; then
+        info_print "An AMD CPU has been detected, the AMD microcode will be installed."
+        MICROCODE="amd-ucode"
+        sleep 2
+    else
+        info_print "An Intel CPU has been detected, the Intel microcode will be installed."
+        MICROCODE="intel-ucode"
+        sleep 2
+    fi
+}
+
+# Detect and install GPU drivers (function).
+gpu_drivers() {
+  display_header
+  info_print "=> Checking for a dedicated GPU"
+  sleep 1.5
+
+  # Check for NVIDIA GPU
+  if lspci | grep -i "NVIDIA" | grep -i "VGA compatible controller"; then
+    display_header
+    yN_print "NVIDIA GPU detected. Would you like to install NVIDIA drivers?"
+    read -rp "" INSTALL_GPU
+    if [[ "$INSTALL_GPU" =~ ^([yY][eE][sS]|[yY])$ ]]; then
+      INSTALL_GPU_DRIVERS=("nvidia-dkms" "nvidia-utils" "nvidia-settings" "lib32-nvidia-utils" "egl-wayland")
+    else
+      info_print "=> Skipping NVIDIA driver installation"
+      INSTALL_GPU_DRIVERS=""
+      sleep 1.5
+    fi
+  # Check for AMD GPU
+  elif lspci | grep -i "AMD/ATI" | grep -i "VGA compatible controller"; then
+    display_header
+    yN_print "AMD GPU detected. Would you like to install AMD drivers?"
+    read -rp "" INSTALL_GPU
+    if [[ "$INSTALL_GPU" =~ ^([yY][eE][sS]|[yY])$ ]]; then
+      INSTALL_GPU_DRIVERS="xf86-video-amdgpu"
+    else
+      info_print "=> Skipping AMD driver installation"
+      INSTALL_GPU_DRIVERS=""
+      sleep 1.5
+    fi
+  # Check for Intel GPU
+  elif lspci | grep -i "Intel Corporation" | grep -i "VGA compatible controller"; then
+    display_header
+    yN_print "Intel GPU detected. Would you like to install Intel drivers?"
+    read -rp "" INSTALL_GPU
+    if [[ "$INSTALL_GPU" =~ ^([yY][eE][sS]|[yY])$ ]]; then
+      INSTALL_GPU_DRIVERS="xf86-video-intel"
+    else
+      info_print "=> Skipping Intel driver installation"
+      INSTALL_GPU_DRIVERS=""
+      sleep 1.5
+    fi
+  else
+    info_print "No dedicated GPU detected."
+    INSTALL_GPU_DRIVERS=""
+    sleep 1.5
+  fi
+}
+
+# Choose a bootloader to install (function).
+choose_bootloader() {
+  display_header
+  if [ -d /sys/firmware/efi/efivars ]; then
+    EFIBOOTMGR="efibootmgr"
+    info_print "=> EFI system detected. Choose a bootloader to install:"
+    choices_print " * 1)"" GRUB"
+    choices_print "   2)"" systemd-boot"
+    #choices_print "   3)"" rEFInd"
+    select_print "1" "3" "Bootloader" "BOOTLOADER_CHOICE"
+    case "$BOOTLOADER_CHOICE" in
+      #2)
+      #  BOOTLOADER="systemd-boot"
+      #  ;;
+      #3)
+      #  BOOTLOADER="rEFInd"
+      #  ;;
+      *)
+        BOOTLOADER="grub"
+        ;;
+    esac
+  else
+    info_print "=> BIOS system detected. GRUB bootloader will be installed:"
+    sleep 2
+    BOOTLOADER="grub"
+  fi
+}
 
 # List block devices and prompt user for target install disk (function).
 target_disk() {
@@ -699,13 +548,13 @@ partitioning() {
   fi
 }
 
-
+# Function to verify the script has been reviewed by the user.
 read_verify() {
   local VARIFY=true
   if [[ "$VARIFY" != "true" ]]; then
     warning_print "Script review Not Verified"
-    warning_print "You will need to verify that you have reviewed the script before you are able to proceed. "
-    read -rp "Press Enter to exit the script" 
+    warning_print "You will need to verify that you have reviewed the script before you are able to proceed."
+    read -rp "Press Enter to exit the script"
     exit 1
   fi
 }
@@ -718,8 +567,20 @@ read_verify() {
 
 install_base_system() {
   install_message
-  info_print "=> Installing base system with selected role and custom packages"
-  sleep 2  pacstrap /mnt $SYSTEM_PKGS
+  info_print "These are the packages that will be installed:"
+  for PKG in $SYSTEM_PKGS; do
+    info_print "  - $PKG"
+  done  
+  read -rp "$(echo -e ${INFO}Press ${INPUT}Enter${INFO} to proceed, ${INPUT}CTRL+C${INFO} to abort...${RESET})"
+      echo ""
+      info_print "These are the Services that will be Enabled:"
+  for SVC in $ENABLE_SVCS; do
+    info_print "  - $SVC"
+  done  
+  read -rp "$(echo -e ${INFO}Press ${INPUT}Enter${INFO} to proceed, ${INPUT}CTRL+C${INFO} to abort...${RESET})"
+  info_print "=> Installing base system with selected role or custom packages"
+  sleep 2
+  pacstrap /mnt $SYSTEM_PKGS
 }
 
 set_timezone() {
@@ -780,8 +641,8 @@ install_bootloader() {
   if [ -d /sys/firmware/efi/efivars ]; then
     case "$BOOTLOADER" in
       "systemd-boot")
-        arch-chroot /mnt /bin/bash <<EOF
         pacman -S --noconfirm systemd-boot efibootmgr
+        arch-chroot /mnt /bin/bash <<EOF
         bootctl --path=/boot install
 EOF
         ;;

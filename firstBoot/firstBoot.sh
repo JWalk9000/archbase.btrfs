@@ -48,7 +48,7 @@ install_yay() {
   trap 'cd .. && rm -rf yay' EXIT # cleanup if script exits for any reason
   makepkg -si --noconfirm
   trap - EXIT # remove the trap
-  cd ..
+  cd .. 
   rm -rf yay
   info_print "Yay installation complete."
 }
