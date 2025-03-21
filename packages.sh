@@ -23,7 +23,7 @@ load_user_packages() {
     USERPKGS=$(yq eval '.packages.user[]' ./roles/userpkgs.yml)
   else
     warning_print "No userpkgs.yml file found."
-  }
+  fi
 }
 
 # Choose a role for the system (function).
@@ -162,7 +162,7 @@ add_or_remove_services() {
   while true; do
     display_header
     info_print "Current services:"
-    for SVC in "${ENABLE_SVCS[@]}"; do
+    for SVC in "${USER_SVCS[@]}"; do
       info_print "  - $SVC"
     done
     echo ""
@@ -175,14 +175,14 @@ add_or_remove_services() {
       1)
         read -rp "$(info_print "Enter additional services to enable (space-separated): ")" ADD_SVCS
         if [ -n "$ADD_SVCS" ]; then
-          ENABLE_SVCS+=($ADD_SVCS)
+          USER_SVCS+=($ADD_SVCS)
         fi
         ;;
       2)
         read -rp "$(info_print "Enter services to disable (space-separated): ")" REMOVE_SVCS
         if [ -n "$REMOVE_SVCS" ]; then
           for SVC in $REMOVE_SVCS; do
-            ENABLE_SVCS=("${ENABLE_SVCS[@]/$SVC}")
+            USER_SVCS=("${USER_SVCS[@]/$SVC}")
           done
         fi
         ;;
@@ -227,6 +227,7 @@ review_packages_and_services() {
   info_print "Reviewing packages and services:"
   echo ""
   info_print "Packages to be installed:"
+  package_lists
   for PKG in "${SYSTEM_PKGS[@]}"; do
     info_print "  - $PKG"
   done
@@ -282,6 +283,7 @@ system_role() {
 package_lists() {
   BASE_PKGS+=($(yq -r '.base.packages[]' $ROLES_YAML | tr '\n' ' '))
   SYSTEM_PKGS=("${BASE_PKGS[@]}" "${MICROCODE}" "${INSTALL_GPU_DRIVERS}" "${KERNEL_PKG}" "${ROLE_PKGS[@]}" "${USERPKGS[@]}")
+  ENABLE_SVCS=("${BASE_SVCS[@]}" "${ROLE_SVCS[@]}" "${USER_SVCS[@]}")
   SYSTEM_PKGS=($(echo "${SYSTEM_PKGS[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' ')) # Remove duplicates
   ENABLE_SVCS=($(echo "${ENABLE_SVCS[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' ')) # Remove duplicates
 }
