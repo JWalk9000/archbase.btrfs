@@ -7,7 +7,7 @@ set -e
 # Load required functions and variables
 source /tmp/archbase/colors.sh
 source /tmp/archbase/functions.sh
-sourch /tmp/archbase/roles/
+
 
 # Variables to store user inputs
 USERPKGS=()
@@ -23,7 +23,7 @@ load_user_packages() {
     USERPKGS=$(yq eval '.packages.user[]' ./roles/userpkgs.yml)
   else
     warning_print "No userpkgs.yml file found."
-  fi
+  }
 }
 
 # Choose a role for the system (function).
@@ -195,7 +195,7 @@ add_or_remove_services() {
 # Function to display packages
 display_packages() {
   info_print "These are the packages that will be installed:"
-  for PKG in "${VERIFIED_PKGS[@]}"; do
+  for PKG in "${SYSTEM_PKGS[@]}"; do
     info_print "  - $PKG"
   done
 }
@@ -211,7 +211,7 @@ display_services() {
 # Function to save user packages and services to YAML file
 save_userpkgs() {
   yq eval -i '.packages.user = []' ./roles/userpkgs.yml
-  for PKG in "${VERIFIED_PKGS[@]}"; do
+  for PKG in "${SYSTEM_PKGS[@]}"; do
     yq eval -i '.packages.user += ["'$PKG'"]' ./roles/userpkgs.yml
   done
 
@@ -219,6 +219,24 @@ save_userpkgs() {
   for SVC in "${ENABLE_SVCS[@]}"; do
     yq eval -i '.services.user += ["'$SVC'"]' ./roles/userpkgs.yml
   done
+}
+
+# Function to review packages and services
+review_packages_and_services() {
+  display_header
+  info_print "Reviewing packages and services:"
+  echo ""
+  info_print "Packages to be installed:"
+  for PKG in "${SYSTEM_PKGS[@]}"; do
+    info_print "  - $PKG"
+  done
+  echo ""
+  info_print "Services to be enabled:"
+  for SVC in "${ENABLE_SVCS[@]}"; do
+    info_print "  - $SVC"
+  done
+  echo ""
+  read -rp "$(info_print "Press Enter to continue.")"
 }
 
 # Function to handle package and service selection
@@ -242,10 +260,9 @@ packages_and_services() {
       2) load_user_packages ;;
       3) add_or_remove_packages ;;
       4) add_or_remove_services ;;
-      5)
-        display_packages
-        display_services
-        ;;
+      5) 
+        package_lists # Ensure the latest package and service lists are consolidated
+        review_packages_and_services ;;
       6) save_userpkgs ;;
       7) break ;;
       8) return ;;
