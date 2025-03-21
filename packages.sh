@@ -40,8 +40,8 @@ choose_role() {
         ;;
       2)
         info_print "Switching roles. Removing packages and services from the current role: $CURRENT_ROLE."
-        ROLE_PKGS=("${ROLE_PKGS[@]/$(yq -r ".roles.$CURRENT_ROLE.packages[]" $ROLES_YAML | tr '\n' ' ')}")
-        ENABLE_SVCS=("${ENABLE_SVCS[@]/$(yq -r ".roles.$CURRENT_ROLE.services[]" $ROLES_YAML | tr '\n' ' ')}")
+        ROLE_PKGS=("${ROLE_PKGS[@]/$(yq ".roles.$CURRENT_ROLE.packages[]" $ROLES_YAML | tr '\n' ' ')}")
+        ENABLE_SVCS=("${ENABLE_SVCS[@]/$(yq ".roles.$CURRENT_ROLE.services[]" $ROLES_YAML | tr '\n' ' ')}")
         CURRENT_ROLE=""
         ;;
       *)
@@ -275,14 +275,14 @@ packages_and_services() {
 # Package and service lists for the role options
 system_role() {
   local ROLE=$1
-  ROLE_PKGS+=($(yq -r ".roles.$ROLE.packages[]" $ROLES_YAML | tr '\n' ' '))
-  ENABLE_SVCS+=($(yq -r ".roles.$ROLE.services[]" $ROLES_YAML | tr '\n' ' '))
+  ROLE_PKGS+=($(yq ".roles.$ROLE.packages[]" $ROLES_YAML | tr '\n' ' '))
+  ENABLE_SVCS+=($(yq ".roles.$ROLE.services[]" $ROLES_YAML | tr '\n' ' '))
 }
 
 # Consolidate all package lists and remove duplicates
 package_lists() {
-  BASE_PKGS+=($(yq -r '.base.packages[]' $ROLES_YAML | tr '\n' ' '))
-  BASE_SVCS+=($(yq -r '.base.services[]' $ROLES_YAML | tr '\n' ' '))
+  BASE_PKGS+=($(yq '.base.packages[]' $ROLES_YAML | tr '\n' ' '))
+  BASE_SVCS+=($(yq '.base.services[]' $ROLES_YAML | tr '\n' ' '))
   SYSTEM_PKGS=("${BASE_PKGS[@]}" "${MICROCODE}" "${INSTALL_GPU_DRIVERS}" "${KERNEL_PKG}" "${ROLE_PKGS[@]}" "${USERPKGS[@]}")
   ENABLE_SVCS=("${BASE_SVCS[@]}" "${ROLE_SVCS[@]}" "${USER_SVCS[@]}")
   SYSTEM_PKGS=($(echo "${SYSTEM_PKGS[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' ')) # Remove duplicates
