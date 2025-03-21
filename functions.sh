@@ -119,13 +119,21 @@ select_root_password() {
 # Setting up a username and password for the user account (function).
 create_new_user() {
   display_header
-  read -rp "$(info_print "Enter new username (must be all lowercase):")" NEW_USER
-  echo ""
-  if [[ -z "$NEW_USER" ]]; then
-    warning_print "You need to enter a username, please try again."
-    sleep 2
-    return 1
-  fi
+  while true; do
+    read -rp "$(info_print "Enter new username (must be all lowercase and alphabetic): ")" NEW_USER
+    NEW_USER=$(echo "$NEW_USER" | tr '[:upper:]' '[:lower:]') # Convert to lowercase
+    if [[ -z "$NEW_USER" ]]; then
+      warning_print "You need to enter a username, please try again."
+      sleep 2
+      continue
+    elif [[ ! "$NEW_USER" =~ ^[a-z]+$ ]]; then
+      warning_print "The username must contain only lowercase alphabetic characters. Please try again."
+      sleep 2
+      continue
+    fi
+    break
+  done
+
   read -rp "$(yN_print "Should ${NEW_USER} have sudo privileges?")" SUDO_CHOICE
   echo ""
   if [[ "$SUDO_CHOICE" =~ ^([yY][eE][sS]|[yY])$ ]]; then
