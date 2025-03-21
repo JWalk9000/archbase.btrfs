@@ -74,13 +74,16 @@ until gpu_drivers; do : ; done
 until detect_vm; do : ; done
 
 # Select system role
-until choose_role; do : ; done
+#until choose_role; do : ; done
 
 # Consolidate package lists before any user packages are added
-until package_lists; do : ; done
+#until package_lists; do : ; done
 
 # Select additional packages to install
-until user_packages; do : ; done
+#until user_packages; do : ; done
+
+# Select additional services to enable
+until packages_and_services; do : ; done
 
 # offer to enable Destop environment setup
 until desktop_scripts; do : ; done

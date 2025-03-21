@@ -15,6 +15,7 @@ VERIFIED_PKGS=()
 ENABLE_SVCS=()
 ROLES_YAML="./roles/roles.yml"
 USER_YAML="./roles/userpkgs.yml"
+CURRENT_ROLE=""
 
 # Function to load user packages from YAML file
 load_user_packages() {
@@ -28,9 +29,31 @@ load_user_packages() {
 # Choose a role for the system (function).
 choose_role() {
   display_header
-  info_print "Below are some available system roles to choose from. If you created a userpkgs.txt file, you can skip this step or select a role as well. 
-  I suggest choosing to install Hyperland if you intend on using the fistBoot.sh script to install a hyperland configuration.
-  "
+  if [[ -n "$CURRENT_ROLE" ]]; then
+    info_print "You have already selected the role: $CURRENT_ROLE."
+    choices_print "1" ") Add another role"
+    choices_print "2" ") Switch to a different role"
+    select_print "1" "2" "Choose an option: " ROLE_ACTION
+    case $ROLE_ACTION in
+      1)
+        info_print "Adding another role."
+        ;;
+      2)
+        info_print "Switching roles. Removing packages and services from the current role: $CURRENT_ROLE."
+        ROLE_PKGS=("${ROLE_PKGS[@]/$(yq -r ".roles.$CURRENT_ROLE.packages[]" $ROLES_YAML | tr '\n' ' ')}")
+        ENABLE_SVCS=("${ENABLE_SVCS[@]/$(yq -r ".roles.$CURRENT_ROLE.services[]" $ROLES_YAML | tr '\n' ' ')}")
+        CURRENT_ROLE=""
+        ;;
+      *)
+        warning_print "Invalid option. Returning to the menu."
+        return
+        ;;
+    esac
+  fi
+
+  info_print "Below are some available system roles to choose from. If you created a userpkgs.txt file, you can skip this step or select a role as well."
+  info_print "I suggest choosing to install Hyperland if you intend on using the firstBoot.sh script to install a Hyperland configuration."
+  echo ""
   info_print "=> Select a role:"
   choices_print "0" ") Skip/Custom"
   choices_print "1" ") Server ----------------- A basic server setup with some common services aiming at a similar experience to Ubuntu Server."
@@ -42,24 +65,28 @@ choose_role() {
   case $SYSTEM_ROLE in
     1)
       system_role server
+      CURRENT_ROLE="server"
       return 0;;
     2)
       system_role xfce
+      CURRENT_ROLE="xfce"
       return 0;;
     3)
       system_role kde
+      CURRENT_ROLE="kde"
       return 0;;
     4)
       system_role gnome
+      CURRENT_ROLE="gnome"
       return 0;;
     5)
       system_role hypr
+      CURRENT_ROLE="hypr"
       return 0;;
     *)
       ROLE_PKGS=""
       return 0;;
   esac
-  
 }
 
 # Function to verify user packages
@@ -73,7 +100,7 @@ verify_packages() {
       Yn_print "Would you like to change the spelling?"
       read -rp "" CHANGE_SPELLING
       if [[ "$CHANGE_SPELLING" =~ ^([yY][eE][sS]|[yY])$ ]]; then
-        read -rp "Enter the correct package name: " FIXPKG
+        read -rp "$(info_print "Enter the correct package name: ")" FIXPKG
         if pacman -Si "$FIXPKG" > /dev/null; then
           VERIFIED_PKGS+=("$FIXPKG")
         else
@@ -96,25 +123,27 @@ verify_packages() {
 # Function to add or remove packages
 add_or_remove_packages() {
   while true; do
-    echo "Current packages:"
+    display_header
+    info_print "Current packages:"
     for PKG in "${USERPKGS[@]}"; do
-      echo "  - $PKG"
+      info_print "  - $PKG"
     done
-    echo "1) Add packages"
-    echo "2) Remove packages"
-    echo "3) Go back"
-    read -rp "Choose an option: " OPTION
+    echo ""
+    info_print "1) Add packages"
+    info_print "2) Remove packages"
+    info_print "3) Go back"
+    select_print "1" "3" "Choose an option: " OPTION
 
     case $OPTION in
       1)
-        read -rp "Enter additional packages to install (space-separated): " ADD_PKGS
+        read -rp "$(info_print "Enter additional packages to install (space-separated): ")" ADD_PKGS
         if [ -n "$ADD_PKGS" ]; then
           USERPKGS+=($ADD_PKGS)
           verify_packages
         fi
         ;;
       2)
-        read -rp "Enter packages to remove (space-separated): " REMOVE_PKGS
+        read -rp "$(info_print "Enter packages to remove (space-separated): ")" REMOVE_PKGS
         if [ -n "$REMOVE_PKGS" ]; then
           for PKG in $REMOVE_PKGS; do
             USERPKGS=("${USERPKGS[@]/$PKG}")
@@ -123,7 +152,7 @@ add_or_remove_packages() {
         fi
         ;;
       3) break ;;
-      *) echo "Invalid option. Please try again." ;;
+      *) warning_print "Invalid option. Please try again." ;;
     esac
   done
 }
@@ -131,24 +160,26 @@ add_or_remove_packages() {
 # Function to add or remove services
 add_or_remove_services() {
   while true; do
-    echo "Current services:"
+    display_header
+    info_print "Current services:"
     for SVC in "${ENABLE_SVCS[@]}"; do
-      echo "  - $SVC"
+      info_print "  - $SVC"
     done
-    echo "1) Add services"
-    echo "2) Remove services"
-    echo "3) Go back"
-    read -rp "Choose an option: " OPTION
+    echo ""
+    info_print "1) Add services"
+    info_print "2) Remove services"
+    info_print "3) Go back"
+    select_print "1" "3" "Choose an option: " OPTION
 
     case $OPTION in
       1)
-        read -rp "Enter additional services to enable (space-separated): " ADD_SVCS
+        read -rp "$(info_print "Enter additional services to enable (space-separated): ")" ADD_SVCS
         if [ -n "$ADD_SVCS" ]; then
           ENABLE_SVCS+=($ADD_SVCS)
         fi
         ;;
       2)
-        read -rp "Enter services to disable (space-separated): " REMOVE_SVCS
+        read -rp "$(info_print "Enter services to disable (space-separated): ")" REMOVE_SVCS
         if [ -n "$REMOVE_SVCS" ]; then
           for SVC in $REMOVE_SVCS; do
             ENABLE_SVCS=("${ENABLE_SVCS[@]/$SVC}")
@@ -156,7 +187,7 @@ add_or_remove_services() {
         fi
         ;;
       3) break ;;
-      *) echo "Invalid option. Please try again." ;;
+      *) warning_print "Invalid option. Please try again." ;;
     esac
   done
 }
@@ -192,17 +223,19 @@ save_userpkgs() {
 
 # Function to handle package and service selection
 packages_and_services() {
+  display_header
   while true; do
-    echo "Package and Service Management Menu:"
-    echo "1) Choose role"
-    echo "2) Load user packages"
-    echo "3) Add or remove packages"
-    echo "4) Add or remove services"
-    echo "5) Review packages and services"
-    echo "6) Save packages and services"
-    echo "7) Continue"
-    echo "8) Go back"
-    read -rp "Choose an option: " OPTION
+    display_header
+    info_print "Package and Service Management Menu:"
+    choices_print "1" ") Choose role"
+    choices_print "2" ") Load user packages"
+    choices_print "3" ") Add or remove packages"
+    choices_print "4" ") Add or remove services"
+    choices_print "5" ") Review packages and services"
+    choices_print "6" ") Save packages and services"
+    choices_print "7" ") Continue"
+    choices_print "8" ") Go back"
+    select_print "1" "8" "Choose an option: " OPTION
 
     case $OPTION in
       1) choose_role ;;
@@ -216,7 +249,7 @@ packages_and_services() {
       6) save_userpkgs ;;
       7) break ;;
       8) return ;;
-      *) echo "Invalid option. Please try again." ;;
+      *) warning_print "Invalid option. Please try again." ;;
     esac
   done
 }
@@ -224,17 +257,15 @@ packages_and_services() {
 # Package and service lists for the role options
 system_role() {
   local ROLE=$1
-  ROLE_PKGS=$(yq -r ".roles.$ROLE.packages[]" $ROLES_YAML | tr '\n' ' ')
-  ENABLE_SVCS+=$(yq -r ".roles.$ROLE.services[]" $ROLES_YAML | tr '\n' ' ') 
+  ROLE_PKGS+=($(yq -r ".roles.$ROLE.packages[]" $ROLES_YAML | tr '\n' ' '))
+  ENABLE_SVCS+=($(yq -r ".roles.$ROLE.services[]" $ROLES_YAML | tr '\n' ' '))
 }
 
-# Consolidate all package lists
+# Consolidate all package lists and remove duplicates
 package_lists() {
-  BASE_PKGS+=$(yq -r '.base.packages[]' $ROLES_YAML | tr '\n' ' ')
-  SYSTEM_PKGS="$BASE_PKGS $MICROCODE $INSTALL_GPU_DRIVERS $KERNEL_PKG $ROLE_PKGS $USERPKGS"
-  SYSTEM_PKGS=$(echo $SYSTEM_PKGS | tr -s ' ')
-  ENABLE_SVCS+=$(yq -r ".base.services[]" $ROLES_YAML | tr '\n' ' ')
+  BASE_PKGS+=($(yq -r '.base.packages[]' $ROLES_YAML | tr '\n' ' '))
+  SYSTEM_PKGS=("${BASE_PKGS[@]}" "${MICROCODE}" "${INSTALL_GPU_DRIVERS}" "${KERNEL_PKG}" "${ROLE_PKGS[@]}" "${USERPKGS[@]}")
+  SYSTEM_PKGS=($(echo "${SYSTEM_PKGS[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' ')) # Remove duplicates
+  ENABLE_SVCS=($(echo "${ENABLE_SVCS[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' ')) # Remove duplicates
 }
 
-# Call the main function
-packages_and_services
