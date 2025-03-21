@@ -23,7 +23,7 @@ load_user_packages() {
     USERPKGS=$(yq eval '.packages.user[]' ./roles/userpkgs.yml)
   else
     warning_print "No userpkgs.yml file found."
-  }
+  fi
 }
 
 # Choose a role for the system (function).
