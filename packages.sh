@@ -23,7 +23,7 @@ load_user_packages() {
     USERPKGS=$(yq eval '.packages.user[]' ./roles/userpkgs.yml)
   else
     warning_print "No userpkgs.yml file found."
-  fi
+  }
 }
 
 # Choose a role for the system (function).
@@ -281,8 +281,8 @@ system_role() {
 
 # Consolidate all package lists and remove duplicates
 package_lists() {
-  BASE_PKGS+=($(yq '.base.packages[]' $ROLES_YAML | tr '\n' ' '))
-  BASE_SVCS+=($(yq '.base.services[]' $ROLES_YAML | tr '\n' ' '))
+  BASE_PKGS+=($(yq '.base.packages[]' $ROLES_YAML | tr -d '"' | tr '\n' ' '))
+  BASE_SVCS+=($(yq '.base.services[]' $ROLES_YAML | tr -d '"' | tr '\n' ' '))
   SYSTEM_PKGS=("${BASE_PKGS[@]}" "${MICROCODE}" "${INSTALL_GPU_DRIVERS}" "${KERNEL_PKG}" "${ROLE_PKGS[@]}" "${USERPKGS[@]}")
   ENABLE_SVCS=("${BASE_SVCS[@]}" "${ROLE_SVCS[@]}" "${USER_SVCS[@]}")
   SYSTEM_PKGS=($(echo "${SYSTEM_PKGS[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' ')) # Remove duplicates
