@@ -23,10 +23,8 @@ CURRENT_ROLE=""
 # Function to load user packages and services from YAML file
 load_user_packages() {
   if [ -f "$USER_YAML" ]; then
-    # Load user packages, ensuring it's an array even if empty/null
-    mapfile -t USERPKGS < <(yq eval '.packages.user // [] | .[]' "$USER_YAML")
-    # Load user services, ensuring it's an array even if empty/null
-    mapfile -t USER_SVCS < <(yq eval '.services.user // [] | .[]' "$USER_YAML")
+    mapfile -t USERPKGS < <(yq -r '.packages.user[]?' "$USER_YAML")
+    mapfile -t USER_SVCS < <(yq -r '.services.user[]?' "$USER_YAML")
     info_print "Loaded user packages and services from $USER_YAML."
   else
     warning_print "No $USER_YAML file found. Starting with empty user lists."
@@ -331,7 +329,7 @@ system_role() {
   local ROLE=$1
   info_print "Adding packages and services for role: $ROLE"
   local new_role_pkgs=()
-  mapfile -t new_role_pkgs < <(yq eval ".roles.$ROLE.packages // [] | .[]" "$ROLES_YAML")
+  mapfile -t new_role_pkgs < <(yq -r ".roles.$ROLE.packages[]?" "$ROLES_YAML")
   for pkg in "${new_role_pkgs[@]}"; do
       local found=false
       for existing_pkg in "${ROLE_PKGS[@]}"; do
@@ -346,7 +344,7 @@ system_role() {
   done
 
   local new_role_svcs=()
-  mapfile -t new_role_svcs < <(yq eval ".roles.$ROLE.services // [] | .[]" "$ROLES_YAML")
+  mapfile -t new_role_svcs < <(yq -r ".roles.$ROLE.services[]?" "$ROLES_YAML")
    for svc in "${new_role_svcs[@]}"; do
        local found=false
        for existing_svc in "${ROLE_SVCS[@]}"; do
@@ -367,8 +365,8 @@ package_lists() {
   # Remove the lines that loaded them from YAML here:
   # local BASE_PKGS=() # Removed
   # local BASE_SVCS=() # Removed
-  # mapfile -t BASE_PKGS < <(yq eval '.base.packages // [] | .[]' "$ROLES_YAML" | tr -d '"') # Removed
-  # mapfile -t BASE_SVCS < <(yq eval '.base.services // [] | .[]' "$ROLES_YAML" | tr -d '"') # Removed
+  # mapfile -t BASE_PKGS < <(yq -r '.base.packages // [] | .[]' "$ROLES_YAML" | tr -d '"') # Removed
+  # mapfile -t BASE_SVCS < <(yq -r '.base.services // [] | .[]' "$ROLES_YAML" | tr -d '"') # Removed
 
   # Combine all sources into temporary arrays
   # Ensure INSTALL_GPU_DRIVERS is treated as an array

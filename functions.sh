@@ -250,35 +250,35 @@ detect_vm() {
   info_print "=> Detecting whether the system is running in a virtual machine"
   local vm_pkgs=()
   local vm_svcs=()
-  local YAML_FILE="/tmp/archbase/roles/roles.yml" # Ensure correct path
+  local YAML_FILE="$ROLES_YAML" # Use the exported variable
 
   sleep 1.5
   VIRT_TYPE=$(systemd-detect-virt)
   case "$VIRT_TYPE" in
     "oracle")
       info_print "Running in a VirtualBox virtual machine. Adding VirtualBox guest utilities."
-      mapfile -t vm_pkgs < <(yq eval ".virt.oracle.packages // [] | .[]" "$YAML_FILE" | tr -d '"')
-      mapfile -t vm_svcs < <(yq eval ".virt.oracle.services // [] | .[]" "$YAML_FILE" | tr -d '"')
+      mapfile -t vm_pkgs < <(yq -r ".virt.oracle.packages[]?" "$YAML_FILE")
+      mapfile -t vm_svcs < <(yq -r ".virt.oracle.services[]?" "$YAML_FILE")
       ;;
     "vmware")
       info_print "Running in a VMware virtual machine. Adding VMware guest utilities."
-      mapfile -t vm_pkgs < <(yq eval ".virt.vmware.packages // [] | .[]" "$YAML_FILE" | tr -d '"')
-      mapfile -t vm_svcs < <(yq eval ".virt.vmware.services // [] | .[]" "$YAML_FILE" | tr -d '"')
+      mapfile -t vm_pkgs < <(yq -r ".virt.vmware.packages[]?" "$YAML_FILE")
+      mapfile -t vm_svcs < <(yq -r ".virt.vmware.services[]?" "$YAML_FILE")
       ;;
     "kvm")
       info_print "Running in a KVM or QEMU virtual machine. Adding QEMU guest utilities."
-      mapfile -t vm_pkgs < <(yq eval ".virt.kvm.packages // [] | .[]" "$YAML_FILE" | tr -d '"')
-      mapfile -t vm_svcs < <(yq eval ".virt.kvm.services // [] | .[]" "$YAML_FILE" | tr -d '"')
+      mapfile -t vm_pkgs < <(yq -r ".virt.kvm.packages[]?" "$YAML_FILE")
+      mapfile -t vm_svcs < <(yq -r ".virt.kvm.services[]?" "$YAML_FILE")
       ;;
     "microsoft")
       info_print "Running in a Hyper-V virtual machine. Adding Hyper-V guest utilities."
-      mapfile -t vm_pkgs < <(yq eval ".virt.microsoft.packages // [] | .[]" "$YAML_FILE" | tr -d '"')
-      mapfile -t vm_svcs < <(yq eval ".virt.microsoft.services // [] | .[]" "$YAML_FILE" | tr -d '"')
+      mapfile -t vm_pkgs < <(yq -r ".virt.microsoft.packages[]?" "$YAML_FILE")
+      mapfile -t vm_svcs < <(yq -r ".virt.microsoft.services[]?" "$YAML_FILE")
       ;;
     "xen")
       info_print "Running in a Xen virtual machine. Adding Xen guest utilities."
-      mapfile -t vm_pkgs < <(yq eval ".virt.xen.packages // [] | .[]" "$YAML_FILE" | tr -d '"')
-      mapfile -t vm_svcs < <(yq eval ".virt.xen.services // [] | .[]" "$YAML_FILE" | tr -d '"')
+      mapfile -t vm_pkgs < <(yq -r ".virt.xen.packages[]?" "$YAML_FILE")
+      mapfile -t vm_svcs < <(yq -r ".virt.xen.services[]?" "$YAML_FILE")
       ;;
     "none" | "")
       info_print "Not running in a virtual machine."
@@ -292,9 +292,6 @@ detect_vm() {
   # Append VM packages/services to the global BASE arrays
   BASE_PKGS+=("${vm_pkgs[@]}")
   BASE_SVCS+=("${vm_svcs[@]}")
-  # Optional: Remove duplicates within BASE arrays immediately if desired
-  # mapfile -t BASE_PKGS < <(printf "%s\n" "${BASE_PKGS[@]}" | grep -v '^\s*$' | sort -u)
-  # mapfile -t BASE_SVCS < <(printf "%s\n" "${BASE_SVCS[@]}" | grep -v '^\s*$' | sort -u)
 }
 
 # Enable Auto-login for the user (function).
