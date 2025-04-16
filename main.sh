@@ -6,6 +6,9 @@ source /tmp/archbase/colors.sh
 source /tmp/archbase/functions.sh
 source /tmp/archbase/packages.sh
 
+ROLES_YAML="./roles/roles.yml"
+USER_YAML="./roles/userpkgs.yml"
+
 
 #####################################################
 # Script variables -- some of these can be pre-set  #
@@ -26,17 +29,31 @@ LOCALE=""                   # Example: "en_US.UTF-8"
 TIMEZONE=""                 # Example: "America/New_York"
 BOOTLOADER="grub"           # 'grub' 'systemd-boot' or 'rEFInd'
 
+# Initialize Package/Service Arrays
+BASE_PKGS=()                # Base packages from roles.yml + VM packages
+BASE_SVCS=()                # Base services from roles.yml + VM services
+SYSTEM_PKGS=()              # package list for the base system
+USERPKGS=()                 # User-defined packages from userpkgs.yml/menu
+USER_SVCS=()                # User-defined services from userpkgs.yml/menu
+ROLE_PKGS=()                # package list for the selected role
+ROLE_SVCS=()                # Service list for the selected role(s)
+ENABLE_SVCS=()              # To add additional services to be enabled at boot, add them to base_services array in the roles.yml file
 
-SYSTEM_PKGS=""              # package list for the base system
-ROLE_PKGS=""                # package list for the selected role
 MICROCODE=""                # 'intel-ucode' 'amd-ucode' or blank
 KERNEL_PKG=""               # on of: 'linux' 'linux-lts' 'linux-hardened' 'linux-zen'
+GPU_DRIVERS=()              # 'true' or blank
 INSTALL_DISK=""             # Example: "/dev/sda"
-GPU_DRIVERS=""              # 'true' or blank
 DESKTOP_CHOICE=""           # 'true' or blank 
 AUTOLOGIN_CHOICE=""         # 'true' or blank
-ENABLE_SVCS=""              # To add additional services to be enabled at boot, add them to base_services array in the roles.yml file
 
+# Load base packages and services from roles.yml initially
+ROLES_YAML_PATH="/tmp/archbase/roles/roles.yml" # Ensure correct path
+if [ -f "$ROLES_YAML_PATH" ]; then
+    mapfile -t BASE_PKGS < <(yq eval '.base.packages // [] | .[]' "$ROLES_YAML_PATH" | tr -d '"')
+    mapfile -t BASE_SVCS < <(yq eval '.base.services // [] | .[]' "$ROLES_YAML_PATH" | tr -d '"')
+else
+    warning_print "Could not find roles.yml at $ROLES_YAML_PATH. Base packages/services will be empty."
+fi
 
 # Display the header at the start and greet the user.
 display_header
