@@ -248,48 +248,53 @@ choose_kernel() {
 # Check if system is running in a virtual machine (function).
 detect_vm() {
   info_print "=> Detecting whether the system is running in a virtual machine"
+  local vm_pkgs=()
+  local vm_svcs=()
+  local YAML_FILE="/tmp/archbase/roles/roles.yml" # Ensure correct path
+
   sleep 1.5
   VIRT_TYPE=$(systemd-detect-virt)
   case "$VIRT_TYPE" in
     "oracle")
-      info_print "Running in a VirtualBox virtual machine. Installing VirtualBox guest utilities."
-      sleep 1.5
-      BASE_PKGS+=$(yq eval -r ".virt.oracle.packages[]" $YAML_FILE | tr '\n' ' ')
-      ENABLE_SVCS+=$(yq eval -r ".virt.oracle.services[]" $YAML_FILE | tr '\n' ' ')
+      info_print "Running in a VirtualBox virtual machine. Adding VirtualBox guest utilities."
+      mapfile -t vm_pkgs < <(yq eval ".virt.oracle.packages // [] | .[]" "$YAML_FILE" | tr -d '"')
+      mapfile -t vm_svcs < <(yq eval ".virt.oracle.services // [] | .[]" "$YAML_FILE" | tr -d '"')
       ;;
     "vmware")
-      info_print "Running in a VMware virtual machine. Installing VMware guest utilities."
-      sleep 1.5
-      BASE_PKGS+=$(yq eval -r ".virt.vmware.packages[]" $YAML_FILE | tr '\n' ' ')
-      ENABLE_SVCS+=$(yq eval -r ".virt.vmware.services[]" $YAML_FILE | tr '\n' ' ')
+      info_print "Running in a VMware virtual machine. Adding VMware guest utilities."
+      mapfile -t vm_pkgs < <(yq eval ".virt.vmware.packages // [] | .[]" "$YAML_FILE" | tr -d '"')
+      mapfile -t vm_svcs < <(yq eval ".virt.vmware.services // [] | .[]" "$YAML_FILE" | tr -d '"')
       ;;
     "kvm")
-      info_print "Running in a KVM or QEMU virtual machine. Installing QEMU guest utilities." 
-      sleep 1.5
-      BASE_PKGS+=$(yq eval -r ".virt.kvm.packages[]" $YAML_FILE | tr '\n' ' ')
-      ENABLE_SVCS+=$(yq eval -r ".virt.kvm.services[]" $YAML_FILE | tr '\n' ' ')
+      info_print "Running in a KVM or QEMU virtual machine. Adding QEMU guest utilities."
+      mapfile -t vm_pkgs < <(yq eval ".virt.kvm.packages // [] | .[]" "$YAML_FILE" | tr -d '"')
+      mapfile -t vm_svcs < <(yq eval ".virt.kvm.services // [] | .[]" "$YAML_FILE" | tr -d '"')
       ;;
     "microsoft")
-      info_print "Running in a Hyper-V virtual machine. Installing Hyper-V guest utilities."
-      sleep 1.5
-      BASE_PKGS+=$(yq eval -r ".virt.microsoft.packages[]" $YAML_FILE | tr '\n' ' ')
-      ENABLE_SVCS+=$(yq eval -r ".virt.microsoft.services[]" $YAML_FILE | tr '\n' ' ')
+      info_print "Running in a Hyper-V virtual machine. Adding Hyper-V guest utilities."
+      mapfile -t vm_pkgs < <(yq eval ".virt.microsoft.packages // [] | .[]" "$YAML_FILE" | tr -d '"')
+      mapfile -t vm_svcs < <(yq eval ".virt.microsoft.services // [] | .[]" "$YAML_FILE" | tr -d '"')
       ;;
     "xen")
-      info_print "Running in a Xen virtual machine. Installing Xen guest utilities."
-      sleep 1.5
-      BASE_PKGS+=$(yq eval -r ".virt.xen.packages[]" $YAML_FILE | tr '\n' ' ')
-      ENABLE_SVCS+=$(yq eval -r ".virt.xen.services[]" $YAML_FILE | tr '\n' ' ')
+      info_print "Running in a Xen virtual machine. Adding Xen guest utilities."
+      mapfile -t vm_pkgs < <(yq eval ".virt.xen.packages // [] | .[]" "$YAML_FILE" | tr -d '"')
+      mapfile -t vm_svcs < <(yq eval ".virt.xen.services // [] | .[]" "$YAML_FILE" | tr -d '"')
       ;;
     "none" | "")
-      echo "Not running in a virtual machine."
-      sleep 1.5
+      info_print "Not running in a virtual machine."
       ;;
     *)
-      echo "Unknown virtualization type: $VIRT_TYPE, no additional packages will be installed."
-      sleep 1.5
+      warning_print "Unknown virtualization type: $VIRT_TYPE, no additional VM packages/services will be added."
       ;;
   esac
+  sleep 1.5
+
+  # Append VM packages/services to the global BASE arrays
+  BASE_PKGS+=("${vm_pkgs[@]}")
+  BASE_SVCS+=("${vm_svcs[@]}")
+  # Optional: Remove duplicates within BASE arrays immediately if desired
+  # mapfile -t BASE_PKGS < <(printf "%s\n" "${BASE_PKGS[@]}" | grep -v '^\s*$' | sort -u)
+  # mapfile -t BASE_SVCS < <(printf "%s\n" "${BASE_SVCS[@]}" | grep -v '^\s*$' | sort -u)
 }
 
 # Enable Auto-login for the user (function).

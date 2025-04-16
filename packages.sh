@@ -8,21 +8,30 @@ set -e
 source /tmp/archbase/colors.sh
 source /tmp/archbase/functions.sh
 
-
 # Variables to store user inputs
 USERPKGS=()
+USER_SVCS=() # Define USER_SVCS array
+ROLE_PKGS=() # Define ROLE_PKGS array
+ROLE_SVCS=() # Define ROLE_SVCS array
 VERIFIED_PKGS=()
-ENABLE_SVCS=()
+ENABLE_SVCS=() # This will hold the final consolidated list of services
+SYSTEM_PKGS=() # This will hold the final consolidated list of packages
 ROLES_YAML="./roles/roles.yml"
 USER_YAML="./roles/userpkgs.yml"
 CURRENT_ROLE=""
 
-# Function to load user packages from YAML file
+# Function to load user packages and services from YAML file
 load_user_packages() {
-  if [ -f "./roles/userpkgs.yml" ]; then
-    USERPKGS=$(yq eval '.packages.user[]' ./roles/userpkgs.yml)
+  if [ -f "$USER_YAML" ]; then
+    # Load user packages, ensuring it's an array even if empty/null
+    mapfile -t USERPKGS < <(yq eval '.packages.user // [] | .[]' "$USER_YAML")
+    # Load user services, ensuring it's an array even if empty/null
+    mapfile -t USER_SVCS < <(yq eval '.services.user // [] | .[]' "$USER_YAML")
+    info_print "Loaded user packages and services from $USER_YAML."
   else
-    warning_print "No userpkgs.yml file found."
+    warning_print "No $USER_YAML file found. Starting with empty user lists."
+    USERPKGS=()
+    USER_SVCS=()
   fi
 }
 
@@ -31,17 +40,17 @@ choose_role() {
   display_header
   if [[ -n "$CURRENT_ROLE" ]]; then
     info_print "You have already selected the role: $CURRENT_ROLE."
-    choices_print "1" ") Add another role"
-    choices_print "2" ") Switch to a different role"
+    choices_print "1" ") Add another role's packages/services"
+    choices_print "2" ") Switch to a different role (removes previous role's items)"
     select_print "1" "2" "Choose an option: " ROLE_ACTION
     case $ROLE_ACTION in
       1)
-        info_print "Adding another role."
+        info_print "Adding packages/services from another role."
         ;;
       2)
-        info_print "Switching roles. Removing packages and services from the current role: $CURRENT_ROLE."
-        ROLE_PKGS=("${ROLE_PKGS[@]/$(yq ".roles.$CURRENT_ROLE.packages[]" $ROLES_YAML | tr '\n' ' ')}")
-        ENABLE_SVCS=("${ENABLE_SVCS[@]/$(yq ".roles.$CURRENT_ROLE.services[]" $ROLES_YAML | tr '\n' ' ')}")
+        info_print "Switching roles. Removing packages and services from the previous role: $CURRENT_ROLE."
+        ROLE_PKGS=()
+        ROLE_SVCS=()
         CURRENT_ROLE=""
         ;;
       *)
@@ -51,42 +60,33 @@ choose_role() {
     esac
   fi
 
-  info_print "Below are some available system roles to choose from. If you created a userpkgs.txt file, you can skip this step or select a role as well."
-  info_print "I suggest choosing to install Hyperland if you intend on using the firstBoot.sh script to install a Hyperland configuration."
-  echo ""
-  info_print "=> Select a role:"
+  info_print "Below are some available system roles to choose from."
   choices_print "0" ") Skip/Custom"
   choices_print "1" ") Server ----------------- A basic server setup with some common services aiming at a similar experience to Ubuntu Server."
   choices_print "2" ") Desktop - XFCE --------- A lightweight desktop environment, similar layout to MS Windows 7."
   choices_print "3" ") Desktop - KDE Plasma --- A modern, feature-rich desktop environment, similar layout MS Windows 10/11."
   choices_print "4" ") Desktop - GNOME -------- A modern, feature-rich desktop environment, similar layout to macOS."
   choices_print "5" ") Desktop - Hyprland ----- A highly customizable dynamic tiling Wayland compositor keyboard-shortcut-driven."
-  select_print "0" "5" "System role: " "SYSTEM_ROLE"
-  case $SYSTEM_ROLE in
-    1)
-      system_role server
-      CURRENT_ROLE="server"
-      return 0;;
-    2)
-      system_role xfce
-      CURRENT_ROLE="xfce"
-      return 0;;
-    3)
-      system_role kde
-      CURRENT_ROLE="kde"
-      return 0;;
-    4)
-      system_role gnome
-      CURRENT_ROLE="gnome"
-      return 0;;
-    5)
-      system_role hypr
-      CURRENT_ROLE="hypr"
-      return 0;;
+  select_print "0" "5" "System role: " "SYSTEM_ROLE_CHOICE"
+  local selected_role_name=""
+  case $SYSTEM_ROLE_CHOICE in
+    1) selected_role_name="server" ;;
+    2) selected_role_name="xfce" ;;
+    3) selected_role_name="kde" ;;
+    4) selected_role_name="gnome" ;;
+    5) selected_role_name="hypr" ;;
     *)
-      ROLE_PKGS=""
+      info_print "Skipping role selection or choosing custom."
       return 0;;
   esac
+
+  system_role "$selected_role_name"
+  if [[ "$ROLE_ACTION" != "1" || -z "$CURRENT_ROLE" ]]; then
+      CURRENT_ROLE="$selected_role_name"
+  else
+      CURRENT_ROLE+="/$selected_role_name"
+  fi
+  return 0
 }
 
 # Function to verify user packages
@@ -118,19 +118,24 @@ verify_packages() {
       fi
     fi
   done
+  USERPKGS=("${VERIFIED_PKGS[@]}")
 }
 
 # Function to add or remove packages
 add_or_remove_packages() {
   while true; do
     display_header
-    info_print "Current packages:"
-    for PKG in "${USERPKGS[@]}"; do
-      info_print "  - $PKG"
-    done
+    info_print "Current user-defined packages:"
+    if [ ${#USERPKGS[@]} -eq 0 ]; then
+        info_print "  (None)"
+    else
+        for PKG in "${USERPKGS[@]}"; do
+          info_print "  - $PKG"
+        done
+    fi
     echo ""
-    info_print "1) Add packages"
-    info_print "2) Remove packages"
+    info_print "1) Add user packages"
+    info_print "2) Remove user packages"
     info_print "3) Go back"
     select_print "1" "3" "Choose an option: " OPTION
 
@@ -138,17 +143,30 @@ add_or_remove_packages() {
       1)
         read -rp "$(info_print "Enter additional packages to install (space-separated): ")" ADD_PKGS
         if [ -n "$ADD_PKGS" ]; then
-          USERPKGS+=($ADD_PKGS)
+          mapfile -t -O "${#USERPKGS[@]}" USERPKGS < <(echo "$ADD_PKGS" | tr ' ' '\n')
           verify_packages
+          info_print "User packages updated."
         fi
         ;;
       2)
         read -rp "$(info_print "Enter packages to remove (space-separated): ")" REMOVE_PKGS
         if [ -n "$REMOVE_PKGS" ]; then
-          for PKG in $REMOVE_PKGS; do
-            USERPKGS=("${USERPKGS[@]/$PKG}")
+          local pkgs_to_remove=($REMOVE_PKGS)
+          local updated_pkgs=()
+          for pkg in "${USERPKGS[@]}"; do
+            local remove=false
+            for rem_pkg in "${pkgs_to_remove[@]}"; do
+              if [[ "$pkg" == "$rem_pkg" ]]; then
+                remove=true
+                break
+              fi
+            done
+            if ! $remove; then
+              updated_pkgs+=("$pkg")
+            fi
           done
-          verify_packages
+          USERPKGS=("${updated_pkgs[@]}")
+          info_print "User packages updated."
         fi
         ;;
       3) break ;;
@@ -159,15 +177,19 @@ add_or_remove_packages() {
 
 # Function to add or remove services
 add_or_remove_services() {
-  while true; do
+   while true; do
     display_header
-    info_print "Current services:"
-    for SVC in "${USER_SVCS[@]}"; do
-      info_print "  - $SVC"
-    done
+    info_print "Current user-defined services:"
+    if [ ${#USER_SVCS[@]} -eq 0 ]; then
+        info_print "  (None)"
+    else
+        for SVC in "${USER_SVCS[@]}"; do
+          info_print "  - $SVC"
+        done
+    fi
     echo ""
-    info_print "1) Add services"
-    info_print "2) Remove services"
+    info_print "1) Add user services"
+    info_print "2) Remove user services"
     info_print "3) Go back"
     select_print "1" "3" "Choose an option: " OPTION
 
@@ -175,15 +197,29 @@ add_or_remove_services() {
       1)
         read -rp "$(info_print "Enter additional services to enable (space-separated): ")" ADD_SVCS
         if [ -n "$ADD_SVCS" ]; then
-          USER_SVCS+=($ADD_SVCS)
+           mapfile -t -O "${#USER_SVCS[@]}" USER_SVCS < <(echo "$ADD_SVCS" | tr ' ' '\n')
+           info_print "User services updated."
         fi
         ;;
       2)
         read -rp "$(info_print "Enter services to disable (space-separated): ")" REMOVE_SVCS
         if [ -n "$REMOVE_SVCS" ]; then
-          for SVC in $REMOVE_SVCS; do
-            USER_SVCS=("${USER_SVCS[@]/$SVC}")
+          local svcs_to_remove=($REMOVE_SVCS)
+          local updated_svcs=()
+          for svc in "${USER_SVCS[@]}"; do
+            local remove=false
+            for rem_svc in "${svcs_to_remove[@]}"; do
+              if [[ "$svc" == "$rem_svc" ]]; then
+                remove=true
+                break
+              fi
+            done
+            if ! $remove; then
+              updated_svcs+=("$svc")
+            fi
           done
+          USER_SVCS=("${updated_svcs[@]}")
+           info_print "User services updated."
         fi
         ;;
       3) break ;;
@@ -210,39 +246,50 @@ display_services() {
 
 # Function to save user packages and services to YAML file
 save_userpkgs() {
-  yq eval -i '.packages.user = []' ./roles/userpkgs.yml
-  for PKG in "${SYSTEM_PKGS[@]}"; do
-    yq eval -i '.packages.user += ["'$PKG'"]' ./roles/userpkgs.yml
+  info_print "Saving user-defined packages and services to $USER_YAML..."
+  yq eval -i '.packages.user = []' "$USER_YAML"
+  yq eval -i '.services.user = []' "$USER_YAML"
+
+  for PKG in "${USERPKGS[@]}"; do
+    yq eval -i '.packages.user += ["'$PKG'"]' "$USER_YAML"
   done
 
-  yq eval -i '.services.user = []' ./roles/userpkgs.yml
-  for SVC in "${ENABLE_SVCS[@]}"; do
-    yq eval -i '.services.user += ["'$SVC'"]' ./roles/userpkgs.yml
+  for SVC in "${USER_SVCS[@]}"; do
+     yq eval -i '.services.user += ["'$SVC'"]' "$USER_YAML"
   done
+  info_print "User configuration saved."
 }
 
 # Function to review packages and services
 review_packages_and_services() {
   display_header
-  info_print "Reviewing packages and services:"
+  info_print "Consolidating and reviewing packages and services..."
+  package_lists
   echo ""
   info_print "Packages to be installed:"
-  package_lists
-  for PKG in "${SYSTEM_PKGS[@]}"; do
-    info_print "  - $PKG"
-  done
+  if [ ${#SYSTEM_PKGS[@]} -eq 0 ]; then
+      info_print "  (None)"
+  else
+      for PKG in "${SYSTEM_PKGS[@]}"; do
+        info_print "  - $PKG"
+      done
+  fi
   echo ""
   info_print "Services to be enabled:"
-  for SVC in "${ENABLE_SVCS[@]}"; do
-    info_print "  - $SVC"
-  done
+   if [ ${#ENABLE_SVCS[@]} -eq 0 ]; then
+      info_print "  (None)"
+  else
+      for SVC in "${ENABLE_SVCS[@]}"; do
+        info_print "  - $SVC"
+      done
+  fi
   echo ""
   read -rp "$(info_print "Press Enter to continue.")"
 }
 
 # Function to handle package and service selection
 packages_and_services() {
-  display_header
+  load_user_packages
   while true; do
     display_header
     info_print "Package and Service Management Menu:"
@@ -261,12 +308,19 @@ packages_and_services() {
       2) load_user_packages ;;
       3) add_or_remove_packages ;;
       4) add_or_remove_services ;;
-      5) 
-        package_lists # Ensure the latest package and service lists are consolidated
-        review_packages_and_services ;;
+      5) review_packages_and_services ;;
       6) save_userpkgs ;;
-      7) break ;;
-      8) return ;;
+      7)
+        package_lists
+        info_print "Package and service selection complete."
+        break ;;
+      8)
+        Yn_print "Do you want to save your user package/service changes before going back?"
+        read -rp "" SAVE_CHOICE
+        if [[ "$SAVE_CHOICE" =~ ^([yY][eE][sS]|[yY])$ ]]; then
+            save_userpkgs
+        fi
+        return ;;
       *) warning_print "Invalid option. Please try again." ;;
     esac
   done
@@ -275,17 +329,54 @@ packages_and_services() {
 # Package and service lists for the role options
 system_role() {
   local ROLE=$1
-  ROLE_PKGS+=($(yq ".roles.$ROLE.packages[]" $ROLES_YAML | tr '\n' ' '))
-  ENABLE_SVCS+=($(yq ".roles.$ROLE.services[]" $ROLES_YAML | tr '\n' ' '))
+  info_print "Adding packages and services for role: $ROLE"
+  local new_role_pkgs=()
+  mapfile -t new_role_pkgs < <(yq eval ".roles.$ROLE.packages // [] | .[]" "$ROLES_YAML")
+  for pkg in "${new_role_pkgs[@]}"; do
+      local found=false
+      for existing_pkg in "${ROLE_PKGS[@]}"; do
+          if [[ "$existing_pkg" == "$pkg" ]]; then
+              found=true
+              break
+          fi
+      done
+      if ! $found; then
+          ROLE_PKGS+=("$pkg")
+      fi
+  done
+
+  local new_role_svcs=()
+  mapfile -t new_role_svcs < <(yq eval ".roles.$ROLE.services // [] | .[]" "$ROLES_YAML")
+   for svc in "${new_role_svcs[@]}"; do
+       local found=false
+       for existing_svc in "${ROLE_SVCS[@]}"; do
+           if [[ "$existing_svc" == "$svc" ]]; then
+               found=true
+               break
+           fi
+       done
+       if ! $found; then
+           ROLE_SVCS+=("$svc")
+       fi
+   done
 }
 
 # Consolidate all package lists and remove duplicates
 package_lists() {
-  BASE_PKGS+=($(yq '.base.packages[]' $ROLES_YAML | tr -d '"' | tr '\n' ' '))
-  BASE_SVCS+=($(yq '.base.services[]' $ROLES_YAML | tr -d '"' | tr '\n' ' '))
-  SYSTEM_PKGS=("${BASE_PKGS[@]}" "${MICROCODE}" "${INSTALL_GPU_DRIVERS}" "${KERNEL_PKG}" "${ROLE_PKGS[@]}" "${USERPKGS[@]}")
-  ENABLE_SVCS=("${BASE_SVCS[@]}" "${ROLE_SVCS[@]}" "${USER_SVCS[@]}")
-  SYSTEM_PKGS=($(echo "${SYSTEM_PKGS[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' ')) # Remove duplicates
-  ENABLE_SVCS=($(echo "${ENABLE_SVCS[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' ')) # Remove duplicates
+  # BASE_PKGS and BASE_SVCS are now expected to be populated globally from main.sh
+  # Remove the lines that loaded them from YAML here:
+  # local BASE_PKGS=() # Removed
+  # local BASE_SVCS=() # Removed
+  # mapfile -t BASE_PKGS < <(yq eval '.base.packages // [] | .[]' "$ROLES_YAML" | tr -d '"') # Removed
+  # mapfile -t BASE_SVCS < <(yq eval '.base.services // [] | .[]' "$ROLES_YAML" | tr -d '"') # Removed
+
+  # Combine all sources into temporary arrays
+  # Ensure INSTALL_GPU_DRIVERS is treated as an array
+  local all_pkgs=("${BASE_PKGS[@]}" "${MICROCODE}" "${INSTALL_GPU_DRIVERS[@]}" "${KERNEL_PKG}" "${ROLE_PKGS[@]}" "${USERPKGS[@]}")
+  local all_svcs=("${BASE_SVCS[@]}" "${ROLE_SVCS[@]}" "${USER_SVCS[@]}")
+
+  # Remove duplicates and assign to final variables
+  mapfile -t SYSTEM_PKGS < <(printf "%s\n" "${all_pkgs[@]}" | grep -v '^\s*$' | sort -u)
+  mapfile -t ENABLE_SVCS < <(printf "%s\n" "${all_svcs[@]}" | grep -v '^\s*$' | sort -u)
 }
 
