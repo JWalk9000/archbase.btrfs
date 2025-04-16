@@ -6,8 +6,11 @@ source /tmp/archbase/colors.sh
 source /tmp/archbase/functions.sh
 source /tmp/archbase/packages.sh
 
-ROLES_YAML="./roles/roles.yml"
-USER_YAML="./roles/userpkgs.yml"
+# Set YAML file paths to absolute paths for consistency
+ROLES_YAML="/tmp/archbase/roles/roles.yml"
+USER_YAML="/tmp/archbase/roles/userpkgs.yml"
+export ROLES_YAML
+export USER_YAML
 
 
 #####################################################
@@ -47,7 +50,7 @@ DESKTOP_CHOICE=""           # 'true' or blank
 AUTOLOGIN_CHOICE=""         # 'true' or blank
 
 # Load base packages and services from roles.yml initially
-ROLES_YAML_PATH="/tmp/archbase/roles/roles.yml" # Ensure correct path
+ROLES_YAML_PATH="$ROLES_YAML" # Use the exported variable
 if [ -f "$ROLES_YAML_PATH" ]; then
     mapfile -t BASE_PKGS < <(yq eval '.base.packages // [] | .[]' "$ROLES_YAML_PATH" | tr -d '"')
     mapfile -t BASE_SVCS < <(yq eval '.base.services // [] | .[]' "$ROLES_YAML_PATH" | tr -d '"')
