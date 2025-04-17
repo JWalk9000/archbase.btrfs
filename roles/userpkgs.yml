@@ -1,5 +1,4 @@
 packages:
-  user:
-    - kate
-    - fastfetch
+  - kate
+  - fastfetch
 services: []

@@ -31,8 +31,8 @@ load_base_packages_services() {
 # Function to load user packages and services from YAML file
 load_user_packages() {
   if [ -f "$USER_YAML" ]; then
-    mapfile -t USERPKGS < <(yq -r '.packages.user[]?' "$USER_YAML")
-    mapfile -t USER_SVCS < <(yq -r '.services.user[]?' "$USER_YAML")
+    mapfile -t USERPKGS < <(yq -r '.packages[]?' "$USER_YAML")
+    mapfile -t USER_SVCS < <(yq -r '.services[]?' "$USER_YAML")
     info_print "Loaded user packages and services from $USER_YAML."
   else
     warning_print "No $USER_YAML file found. Starting with empty user lists."
@@ -252,18 +252,22 @@ display_services() {
 
 # Function to save user packages and services to YAML file
 save_userpkgs() {
+  # Ensure the file exists and has the correct structure
+  if [ ! -f "$USER_YAML" ] || [ ! -s "$USER_YAML" ]; then
+    echo -e "packages: []\nservices: []" > "$USER_YAML"
+  fi
   info_print "Saving user-defined packages and services to $USER_YAML..."
   sleep 1.5
-  yq -i -y '.packages.user = []' "$USER_YAML"
+  yq -i -y '.packages = []' "$USER_YAML"
   sleep 1.5
-  yq -i -y '.services.user = []' "$USER_YAML"
+  yq -i -y '.services = []' "$USER_YAML"
   sleep 1.5
   for PKG in "${USERPKGS[@]}"; do
-    yq -i -y '.packages.user += ["'$PKG'"]' "$USER_YAML"
+    yq -i -y '.packages += ["'$PKG'"]' "$USER_YAML"
     sleep 1.5
   done
   for SVC in "${USER_SVCS[@]}"; do
-    yq -i -y '.services.user += ["'$SVC'"]' "$USER_YAML"
+    yq -i -y '.services += ["'$SVC'"]' "$USER_YAML"
     sleep 1.5
   done
   info_print "User configuration saved."
