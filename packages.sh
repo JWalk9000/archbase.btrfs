@@ -16,9 +16,17 @@ ROLE_SVCS=() # Define ROLE_SVCS array
 VERIFIED_PKGS=()
 ENABLE_SVCS=() # This will hold the final consolidated list of services
 SYSTEM_PKGS=() # This will hold the final consolidated list of packages
-ROLES_YAML="./roles/roles.yml"
-USER_YAML="./roles/userpkgs.yml"
 CURRENT_ROLE=""
+
+# Load base packages and services from roles.yml initially
+load_base_packages_services() {
+  if [ -f "$ROLES_YAML" ]; then
+      mapfile -t BASE_PKGS < <(yq -r '.base.packages[]?' "$ROLES_YAML")
+      mapfile -t BASE_SVCS < <(yq -r '.base.services[]?' "$ROLES_YAML")
+  else
+      warning_print "Could not find roles.yml at $ROLES_YAML. Base packages/services will be empty."
+  fi
+}
 
 # Function to load user packages and services from YAML file
 load_user_packages() {
@@ -245,15 +253,15 @@ display_services() {
 # Function to save user packages and services to YAML file
 save_userpkgs() {
   info_print "Saving user-defined packages and services to $USER_YAML..."
-  yq eval -i '.packages.user = []' "$USER_YAML"
-  yq eval -i '.services.user = []' "$USER_YAML"
+  yq -i '.packages.user = []' "$USER_YAML"
+  yq -i '.services.user = []' "$USER_YAML"
 
   for PKG in "${USERPKGS[@]}"; do
-    yq eval -i '.packages.user += ["'$PKG'"]' "$USER_YAML"
+    yq -i '.packages.user += ["'$PKG'"]' "$USER_YAML"
   done
 
   for SVC in "${USER_SVCS[@]}"; do
-     yq eval -i '.services.user += ["'$SVC'"]' "$USER_YAML"
+     yq -i '.services.user += ["'$SVC'"]' "$USER_YAML"
   done
   info_print "User configuration saved."
 }
@@ -287,6 +295,7 @@ review_packages_and_services() {
 
 # Function to handle package and service selection
 packages_and_services() {
+  load_base_packages_services
   load_user_packages
   while true; do
     display_header

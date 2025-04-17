@@ -49,14 +49,6 @@ INSTALL_DISK=""             # Example: "/dev/sda"
 DESKTOP_CHOICE=""           # 'true' or blank 
 AUTOLOGIN_CHOICE=""         # 'true' or blank
 
-# Load base packages and services from roles.yml initially
-ROLES_YAML_PATH="$ROLES_YAML" # Use the exported variable
-if [ -f "$ROLES_YAML_PATH" ]; then
-    mapfile -t BASE_PKGS < <(yq -r '.base.packages[]?' "$ROLES_YAML_PATH")
-    mapfile -t BASE_SVCS < <(yq -r '.base.services[]?' "$ROLES_YAML_PATH")
-else
-    warning_print "Could not find roles.yml at $ROLES_YAML_PATH. Base packages/services will be empty."
-fi
 
 # Display the header at the start and greet the user.
 display_header
