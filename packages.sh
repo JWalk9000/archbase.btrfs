@@ -98,7 +98,7 @@ choose_role() {
 # Function to verify user packages
 verify_packages() {
   VERIFIED_PKGS=()
-  for PKG in $USERPKGS; do
+  for PKG in "${USERPKGS[@]}"; do
     if pacman -Si "$PKG" > /dev/null; then
       VERIFIED_PKGS+=("$PKG")
     else
@@ -262,11 +262,11 @@ save_userpkgs() {
   sleep 1.5
   yq -i -y '.services = []' "$USER_YAML"
   sleep 1.5
-  for PKG in "${USERPKGS[@]}"; do
+  for PKG in "${SYSTEM_PKGS[@]}"; do
     yq -i -y '.packages += ["'$PKG'"]' "$USER_YAML"
     sleep 1.5
   done
-  for SVC in "${USER_SVCS[@]}"; do
+  for SVC in "${SYSTEM_SVCS[@]}"; do
     yq -i -y '.services += ["'$SVC'"]' "$USER_YAML"
     sleep 1.5
   done

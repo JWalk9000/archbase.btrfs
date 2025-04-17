@@ -12,9 +12,6 @@ USER_YAML="/tmp/archbase/roles/userpkgs.yml"
 export ROLES_YAML
 export USER_YAML
 
-if [ ! -f "$USER_YAML" ]; then
-  echo -e "packages:\n  user: []\nservices: []" > "$USER_YAML"
-fi
 
 #####################################################
 # Script variables -- some of these can be pre-set  #
