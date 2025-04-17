@@ -578,13 +578,13 @@ read_verify() {
 install_base_system() {
   install_message
   info_print "These are the packages that will be installed:"
-  for PKG in $SYSTEM_PKGS; do
+  for PKG in "${SYSTEM_PKGS[@]}"; do
     info_print "  - $PKG"
   done  
   read -rp "$(echo -e ${INFO}Press ${INPUT}Enter${INFO} to proceed, ${INPUT}CTRL+C${INFO} to abort...${RESET})"
       echo ""
       info_print "These are the Services that will be Enabled:"
-  for SVC in $ENABLE_SVCS; do
+  for SVC in "${ENABLE_SVCS[@]}"; do
     info_print "  - $SVC"
   done  
   read -rp "$(echo -e ${INFO}Press ${INPUT}Enter${INFO} to proceed, ${INPUT}CTRL+C${INFO} to abort...${RESET})"

@@ -379,8 +379,6 @@ package_lists() {
   # Remove duplicates and assign to final variables
   mapfile -t SYSTEM_PKGS < <(printf "%s\n" "${all_pkgs[@]}" | grep -v '^\s*$' | sort -u)
   mapfile -t SYSTEM_SVCS < <(printf "%s\n" "${all_svcs[@]}" | grep -v '^\s*$' | sort -u)
-  # Ensure that SYSTEM_PKGS and SYSTEM_SVCS are available outside this function
-  # by exporting them as global variables
-  export SYSTEM_PKGS SYSTEM_SVCS
+  
 }
 

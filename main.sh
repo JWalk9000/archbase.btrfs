@@ -37,10 +37,10 @@ BASE_PKGS=()                # Base packages from roles.yml + VM packages
 BASE_SVCS=()                # Base services from roles.yml + VM services
 USERPKGS=()                 # User-defined packages from userpkgs.yml/menu
 USER_SVCS=()                # User-defined services from userpkgs.yml/menu
-ROLE_PKGS=()                # package list for the selected role
+ROLE_PKGS=()                # Package list for the selected role
 ROLE_SVCS=()                # Service list for the selected role(s)
-SYSTEM_PKGS=()              # package list for the base system
-SYSTEM_SVCS=()              # To add additional services to be enabled at boot, add them to base_services array in the roles.yml file
+SYSTEM_PKGS=()              # Consolidated package lists for the system.
+SYSTEM_SVCS=()              # Consolidated services to be enabled at boot.
 
 MICROCODE=""                # 'intel-ucode' 'amd-ucode' or blank
 KERNEL_PKG=""               # on of: 'linux' 'linux-lts' 'linux-hardened' 'linux-zen'
