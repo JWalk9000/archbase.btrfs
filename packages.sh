@@ -14,7 +14,7 @@ USER_SVCS=() # Define USER_SVCS array
 ROLE_PKGS=() # Define ROLE_PKGS array
 ROLE_SVCS=() # Define ROLE_SVCS array
 VERIFIED_PKGS=()
-ENABLE_SVCS=() # This will hold the final consolidated list of services
+SYSTEM_SVCS=() # This will hold the final consolidated list of services
 SYSTEM_PKGS=() # This will hold the final consolidated list of packages
 CURRENT_ROLE=""
 
@@ -245,7 +245,7 @@ display_packages() {
 # Function to display services
 display_services() {
   info_print "These are the services that will be enabled:"
-  for SVC in "${ENABLE_SVCS[@]}"; do
+  for SVC in "${SYSTEM_SVCS[@]}"; do
     info_print "  - $SVC"
   done
 }
@@ -282,10 +282,10 @@ review_packages_and_services() {
   fi
   echo ""
   info_print "Services to be enabled:"
-   if [ ${#ENABLE_SVCS[@]} -eq 0 ]; then
+   if [ ${#SYSTEM_SVCS[@]} -eq 0 ]; then
       info_print "  (None)"
   else
-      for SVC in "${ENABLE_SVCS[@]}"; do
+      for SVC in "${SYSTEM_SVCS[@]}"; do
         info_print "  - $SVC"
       done
   fi
@@ -297,6 +297,7 @@ review_packages_and_services() {
 packages_and_services() {
   load_base_packages_services
   load_user_packages
+  package_lists
   while true; do
     display_header
     info_print "Package and Service Management Menu:"
@@ -307,8 +308,8 @@ packages_and_services() {
     choices_print "5" ") Review packages and services"
     choices_print "6" ") Save packages and services"
     choices_print "7" ") Continue"
-    choices_print "8" ") Go back"
-    select_print "1" "8" "Choose an option: " OPTION
+    #choices_print "8" ") Go back"
+    select_print "1" "7" "Choose an option: " OPTION
 
     case $OPTION in
       1) choose_role ;;
@@ -370,13 +371,6 @@ system_role() {
 
 # Consolidate all package lists and remove duplicates
 package_lists() {
-  # BASE_PKGS and BASE_SVCS are now expected to be populated globally from main.sh
-  # Remove the lines that loaded them from YAML here:
-  # local BASE_PKGS=() # Removed
-  # local BASE_SVCS=() # Removed
-  # mapfile -t BASE_PKGS < <(yq -r '.base.packages // [] | .[]' "$ROLES_YAML" | tr -d '"') # Removed
-  # mapfile -t BASE_SVCS < <(yq -r '.base.services // [] | .[]' "$ROLES_YAML" | tr -d '"') # Removed
-
   # Combine all sources into temporary arrays
   # Ensure INSTALL_GPU_DRIVERS is treated as an array
   local all_pkgs=("${BASE_PKGS[@]}" "${MICROCODE}" "${INSTALL_GPU_DRIVERS[@]}" "${KERNEL_PKG}" "${ROLE_PKGS[@]}" "${USERPKGS[@]}")
@@ -384,6 +378,9 @@ package_lists() {
 
   # Remove duplicates and assign to final variables
   mapfile -t SYSTEM_PKGS < <(printf "%s\n" "${all_pkgs[@]}" | grep -v '^\s*$' | sort -u)
-  mapfile -t ENABLE_SVCS < <(printf "%s\n" "${all_svcs[@]}" | grep -v '^\s*$' | sort -u)
+  mapfile -t SYSTEM_SVCS < <(printf "%s\n" "${all_svcs[@]}" | grep -v '^\s*$' | sort -u)
+  # Ensure that SYSTEM_PKGS and SYSTEM_SVCS are available outside this function
+  # by exporting them as global variables
+  export SYSTEM_PKGS SYSTEM_SVCS
 }
 
