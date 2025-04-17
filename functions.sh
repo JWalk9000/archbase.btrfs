@@ -577,16 +577,10 @@ read_verify() {
 
 install_base_system() {
   install_message
-  info_print "These are the packages that will be installed:"
-  for PKG in "${SYSTEM_PKGS[@]}"; do
-    info_print "  - $PKG"
-  done  
+  display_packages
   read -rp "$(echo -e ${INFO}Press ${INPUT}Enter${INFO} to proceed, ${INPUT}CTRL+C${INFO} to abort...${RESET})"
-      echo ""
-      info_print "These are the Services that will be Enabled:"
-  for SVC in "${ENABLE_SVCS[@]}"; do
-    info_print "  - $SVC"
-  done  
+  echo ""
+  display_services
   read -rp "$(echo -e ${INFO}Press ${INPUT}Enter${INFO} to proceed, ${INPUT}CTRL+C${INFO} to abort...${RESET})"
   info_print "=> Installing base system with selected role or custom packages"
   sleep 2
@@ -683,7 +677,7 @@ EOF
 # Enable services (function).
 enable_services() {
   install_message
-  local SERVICES=("${ENABLE_SVCS[@]}")
+  local SERVICES=("${SYSTEM_SVCS[@]}")
   mount --bind /sys /mnt/sys
   mount --bind /proc /mnt/proc
   mount --bind /dev /mnt/dev

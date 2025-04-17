@@ -253,17 +253,21 @@ display_services() {
 # Function to save user packages and services to YAML file
 save_userpkgs() {
   info_print "Saving user-defined packages and services to $USER_YAML..."
+  sleep 1.5
   yq -i '.packages.user = []' "$USER_YAML"
+  sleep 1.5
   yq -i '.services.user = []' "$USER_YAML"
-
+  sleep 1.5
   for PKG in "${USERPKGS[@]}"; do
     yq -i '.packages.user += ["'$PKG'"]' "$USER_YAML"
+    sleep 1.5
   done
-
   for SVC in "${USER_SVCS[@]}"; do
-     yq -i '.services.user += ["'$SVC'"]' "$USER_YAML"
+    yq -i '.services.user += ["'$SVC'"]' "$USER_YAML"
+    sleep 1.5
   done
   info_print "User configuration saved."
+  sleep 1.5
 }
 
 # Function to review packages and services
