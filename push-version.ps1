@@ -51,6 +51,8 @@ if ($branch -eq "dev") {
     # Update BRANCH variable in archsetup.sh to match the target branch
     (Get-Content archsetup.sh) -replace '^BRANCH=.*', 'BRANCH="public-testing"' | Set-Content archsetup.sh
     git add archsetup.sh
+    "$date | dev → public-testing | $version | $pushMsg" | Add-Content $LOG_FILE
+    git add $LOG_FILE
     git commit -m "update BRANCH variable"
 
     $version = "V1.$commitCount"
@@ -68,7 +70,6 @@ if ($branch -eq "dev") {
     git commit -m "Add push-version scripts to .gitignore for main branch hygiene"
     git push origin public-testing
 
-    "$date | dev → public-testing | $version | $pushMsg" | Add-Content $LOG_FILE
     Write-Host "Pushed to public-testing as $version"
 }
 elseif ($branch -eq "public-testing") {
@@ -77,6 +78,8 @@ elseif ($branch -eq "public-testing") {
     # Update BRANCH variable in archsetup.sh to match the target branch
     (Get-Content archsetup.sh) -replace '^BRANCH=.*', 'BRANCH="main"' | Set-Content archsetup.sh
     git add archsetup.sh
+    "$date | public-testing → main | $version | $pushMsg" | Add-Content $LOG_FILE
+    git add $LOG_FILE
     git commit -m "update BRANCH variable"
 
     $lastTag = Get-LastTag "main"
@@ -87,7 +90,6 @@ elseif ($branch -eq "public-testing") {
     git push origin main
     git push origin $version
 
-    "$date | public-testing → main | $version | $pushMsg" | Add-Content $LOG_FILE
     Write-Host "Pushed to main as $version"
 }
 # Uncomment and adapt for hotfix/feature support in the future:

@@ -49,6 +49,8 @@ if [[ "$BRANCH" == "dev" ]]; then
   # Update BRANCH variable in archsetup.sh to match the target branch
   sed -i 's/^BRANCH=.*/BRANCH="public-testing"/' archsetup.sh
   git add archsetup.sh
+  echo "$DATE | dev → public-testing | $version | $push_msg" >> "$LOG_FILE"
+  git add "$LOG_FILE"
   git commit -m "update BRANCH variable"
 
   last_tag=$(get_last_tag public-testing)
@@ -82,6 +84,8 @@ elif [[ "$BRANCH" == "public-testing" ]]; then
   # Update BRANCH variable in archsetup.sh to match the target branch
   sed -i 's/^BRANCH=.*/BRANCH="main"/' archsetup.sh
   git add archsetup.sh
+  echo "$DATE | public-testing → main | $version | $push_msg" >> "$LOG_FILE"
+  git add "$LOG_FILE"
   git commit -m "update BRANCH variable"
 
   last_tag=$(get_last_tag main)
