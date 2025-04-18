@@ -37,14 +37,17 @@ $pushMsg = Read-Host "Enter a brief log message for this push"
 if ($branch -eq "dev") {
     $branchExists = git branch --list public-testing
     if (-not $branchExists) {
+        # If public-testing doesn't exist, use main as the base for commit counting
+        $lastTag = Get-LastTag "main"
+        $commitCount = git rev-list --count "$lastTag..dev"
         git checkout -b public-testing
+        git merge dev
     } else {
+        $lastTag = Get-LastTag "public-testing"
+        $commitCount = Get-CommitCount "public-testing"
         git checkout public-testing
         git merge dev
     }
-
-    $lastTag = Get-LastTag "public-testing"
-    $commitCount = Get-CommitCount "public-testing"
     $version = "V1.$commitCount"
     git tag -a $version -m "Public testing version $version"
     git push origin public-testing
