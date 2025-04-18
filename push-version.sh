@@ -46,6 +46,11 @@ if [[ "$BRANCH" == "dev" ]]; then
   git checkout public-testing 2>/dev/null || git checkout -b public-testing
   git merge dev
 
+  # Update BRANCH variable in archsetup.sh to match the target branch
+  sed -i 's/^BRANCH=.*/BRANCH="public-testing"/' archsetup.sh
+  git add archsetup.sh
+  git commit -m "update BRANCH variable"
+
   last_tag=$(get_last_tag public-testing)
   commit_count=$(get_commit_count public-testing)
   version="V1.$commit_count"
@@ -73,6 +78,11 @@ if [[ "$BRANCH" == "dev" ]]; then
 elif [[ "$BRANCH" == "public-testing" ]]; then
   git checkout main
   git merge public-testing
+
+  # Update BRANCH variable in archsetup.sh to match the target branch
+  sed -i 's/^BRANCH=.*/BRANCH="main"/' archsetup.sh
+  git add archsetup.sh
+  git commit -m "update BRANCH variable"
 
   last_tag=$(get_last_tag main)
   major=$(get_major_version "$last_tag")

@@ -48,6 +48,11 @@ if ($branch -eq "dev") {
         git checkout public-testing
         git merge dev
     }
+    # Update BRANCH variable in archsetup.sh to match the target branch
+    (Get-Content archsetup.sh) -replace '^BRANCH=.*', 'BRANCH="public-testing"' | Set-Content archsetup.sh
+    git add archsetup.sh
+    git commit -m "update BRANCH variable"
+
     $version = "V1.$commitCount"
     git tag -a $version -m "Public testing version $version"
     git push origin public-testing
@@ -69,6 +74,10 @@ if ($branch -eq "dev") {
 elseif ($branch -eq "public-testing") {
     git checkout main
     git merge public-testing
+    # Update BRANCH variable in archsetup.sh to match the target branch
+    (Get-Content archsetup.sh) -replace '^BRANCH=.*', 'BRANCH="main"' | Set-Content archsetup.sh
+    git add archsetup.sh
+    git commit -m "update BRANCH variable"
 
     $lastTag = Get-LastTag "main"
     $major = Get-MajorVersion $lastTag
