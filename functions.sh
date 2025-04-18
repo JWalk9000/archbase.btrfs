@@ -584,8 +584,7 @@ install_base_system() {
   read -rp "$(echo -e ${INFO}Press ${INPUT}Enter${INFO} to proceed, ${INPUT}CTRL+C${INFO} to abort...${RESET})"
   info_print "=> Installing base system with selected role or custom packages"
   sleep 2
-  pacstrap /mnt $SYSTEM_PKGS
-}
+pacstrap /mnt "${SYSTEM_PKGS[@]}"}
 
 set_timezone() {
   install_message
