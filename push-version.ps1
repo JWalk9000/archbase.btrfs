@@ -17,7 +17,8 @@ function Get-MajorVersion($tag) {
 }
 
 # Check for uncommitted changes
-if (-not (git diff-index --quiet HEAD --)) {
+$gitStatus = git status --porcelain
+if ($gitStatus) {
     Write-Host "You have uncommitted changes."
     $commitNow = Read-Host "Would you like to commit them now? (y/n)"
     if ($commitNow -match "^[yY]") {
@@ -34,9 +35,13 @@ if (-not (git diff-index --quiet HEAD --)) {
 $pushMsg = Read-Host "Enter a brief log message for this push"
 
 if ($branch -eq "dev") {
-    git checkout public-testing 2>$null
-    if ($LASTEXITCODE -ne 0) { git checkout -b public-testing }
-    git merge dev
+    $branchExists = git branch --list public-testing
+    if (-not $branchExists) {
+        git checkout -b public-testing
+    } else {
+        git checkout public-testing
+        git merge dev
+    }
 
     $lastTag = Get-LastTag "public-testing"
     $commitCount = Get-CommitCount "public-testing"
