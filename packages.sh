@@ -259,19 +259,19 @@ save_userpkgs() {
   info_print "Saving user-defined packages and services to $USER_YAML..."
   sleep 1.5
   yq -i -y '.packages = []' "$USER_YAML"
-  sleep 1.5
+  #sleep 1.5
   yq -i -y '.services = []' "$USER_YAML"
-  sleep 1.5
+  #sleep 1.5
   for PKG in "${SYSTEM_PKGS[@]}"; do
     yq -i -y '.packages += ["'$PKG'"]' "$USER_YAML"
-    sleep 1.5
+    #sleep 1.5
   done
   for SVC in "${SYSTEM_SVCS[@]}"; do
     yq -i -y '.services += ["'$SVC'"]' "$USER_YAML"
-    sleep 1.5
+    #sleep 1.5
   done
   info_print "User configuration saved."
-  sleep 1.5
+  #sleep 1.5
 }
 
 # Function to review packages and services
@@ -304,7 +304,6 @@ review_packages_and_services() {
 # Function to handle package and service selection
 packages_and_services() {
   load_base_packages_services
-  load_user_packages
   package_lists
   while true; do
     display_header
@@ -316,7 +315,6 @@ packages_and_services() {
     choices_print "5" ") Review packages and services"
     choices_print "6" ") Save packages and services"
     choices_print "7" ") Continue"
-    #choices_print "8" ") Go back"
     select_print "1" "7" "Choose an option: " OPTION
 
     case $OPTION in
@@ -324,19 +322,19 @@ packages_and_services() {
       2) load_user_packages ;;
       3) add_or_remove_packages ;;
       4) add_or_remove_services ;;
-      5) review_packages_and_services ;;
+      5) 
+        review_packages_and_services 
+        verify_packages ;;
       6) save_userpkgs ;;
       7)
         package_lists
-        info_print "Package and service selection complete."
-        break ;;
-      8)
-        Yn_print "Do you want to save your user package/service changes before going back?"
+        Yn_print "Do you want to save your user package/service changes before continuing?"
         read -rp "" SAVE_CHOICE
         if [[ "$SAVE_CHOICE" =~ ^([yY][eE][sS]|[yY])$ ]]; then
             save_userpkgs
         fi
-        return ;;
+        info_print "Package and service selection complete."
+        break ;;
       *) warning_print "Invalid option. Please try again." ;;
     esac
   done
