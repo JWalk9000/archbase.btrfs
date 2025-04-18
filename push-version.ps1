@@ -40,11 +40,13 @@ if ($branch -eq "dev") {
         # If public-testing doesn't exist, use main as the base for commit counting
         $lastTag = Get-LastTag "main"
         $commitCount = git rev-list --count "$lastTag..dev"
+        $version = "V1.$commitCount"
         git checkout -b public-testing
         git merge dev
     } else {
         $lastTag = Get-LastTag "public-testing"
         $commitCount = Get-CommitCount "public-testing"
+        $version = "V1.$commitCount"
         git checkout public-testing
         git merge dev
     }
@@ -54,8 +56,6 @@ if ($branch -eq "dev") {
     "$date | dev → public-testing | $version | $pushMsg" | Add-Content $LOG_FILE
     git add $LOG_FILE
     git commit -m "update BRANCH variable"
-
-    $version = "V1.$commitCount"
     git tag -a $version -m "Public testing version $version"
     git push origin public-testing
     git push origin $version
@@ -75,23 +75,27 @@ if ($branch -eq "dev") {
 elseif ($branch -eq "public-testing") {
     git checkout main
     git merge public-testing
+    $lastTag = Get-LastTag "main"
+    $major = Get-MajorVersion $lastTag
+    $nextMajor = $major + 1
+    $version = "V$nextMajor.0"
     # Update BRANCH variable in archsetup.sh to match the target branch
     (Get-Content archsetup.sh) -replace '^BRANCH=.*', 'BRANCH="main"' | Set-Content archsetup.sh
     git add archsetup.sh
     "$date | public-testing → main | $version | $pushMsg" | Add-Content $LOG_FILE
     git add $LOG_FILE
     git commit -m "update BRANCH variable"
-
-    $lastTag = Get-LastTag "main"
-    $major = Get-MajorVersion $lastTag
-    $nextMajor = $major + 1
-    $version = "V$nextMajor.0"
     git tag -a $version -m "Main release $version"
     git push origin main
     git push origin $version
 
     Write-Host "Pushed to main as $version"
 }
+else {
+    Write-Host "Run this script from dev or public-testing branch only."
+    exit 1
+}
+
 # Uncomment and adapt for hotfix/feature support in the future:
 # elseif ($branch -like "hotfix/*") {
 #   # Hotfix branch logic here
@@ -99,10 +103,6 @@ elseif ($branch -eq "public-testing") {
 # elseif ($branch -like "feature/*") {
 #   # Feature branch logic here
 # }
-else {
-    Write-Host "Run this script from dev or public-testing branch only."
-    exit 1
-}
 
 Write-Host "Push history:"
 Get-Content $LOG_FILE | Select-Object -Last 10

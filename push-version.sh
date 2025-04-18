@@ -46,6 +46,11 @@ if [[ "$BRANCH" == "dev" ]]; then
   git checkout public-testing 2>/dev/null || git checkout -b public-testing
   git merge dev
 
+  # Versioning logic
+  last_tag=$(get_last_tag public-testing)
+  commit_count=$(get_commit_count public-testing)
+  version="V1.$commit_count"
+
   # Update BRANCH variable in archsetup.sh to match the target branch
   sed -i 's/^BRANCH=.*/BRANCH="public-testing"/' archsetup.sh
   git add archsetup.sh
@@ -53,9 +58,6 @@ if [[ "$BRANCH" == "dev" ]]; then
   git add "$LOG_FILE"
   git commit -m "update BRANCH variable"
 
-  last_tag=$(get_last_tag public-testing)
-  commit_count=$(get_commit_count public-testing)
-  version="V1.$commit_count"
   git tag -a "$version" -m "Public testing version $version"
   git push origin public-testing
   git push origin "$version"
@@ -81,6 +83,12 @@ elif [[ "$BRANCH" == "public-testing" ]]; then
   git checkout main
   git merge public-testing
 
+  # Versioning logic
+  last_tag=$(get_last_tag main)
+  major=$(get_major_version "$last_tag")
+  next_major=$((major + 1))
+  version="V${next_major}.0"
+
   # Update BRANCH variable in archsetup.sh to match the target branch
   sed -i 's/^BRANCH=.*/BRANCH="main"/' archsetup.sh
   git add archsetup.sh
@@ -88,10 +96,6 @@ elif [[ "$BRANCH" == "public-testing" ]]; then
   git add "$LOG_FILE"
   git commit -m "update BRANCH variable"
 
-  last_tag=$(get_last_tag main)
-  major=$(get_major_version "$last_tag")
-  next_major=$((major + 1))
-  version="V${next_major}.0"
   git tag -a "$version" -m "Main release $version"
   git push origin main
   git push origin "$version"
