@@ -585,7 +585,7 @@ install_base_system() {
   info_print "=> Installing base system with selected role or custom packages"
   echo "DEBUG: SYSTEM_PKGS: ${SYSTEM_PKGS[@]}"  
   sleep 2
-  pacstrap /mnt "${SYSTEM_PKGS[@]}"}
+  pacstrap /mnt "${SYSTEM_PKGS[@]}"
 }
 
 set_timezone() {

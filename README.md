@@ -22,12 +22,28 @@ I have done my best to make this user-friendly for newer linux users, while cate
 - **Custom Packages**: Install additional packages defined in `userpkgs.yml` or interactively during installation.
 - **Role-Based Configuration**: Predefined roles (e.g., server, desktop environments) with associated packages and services.
 - **Post-Installation Scripts**: Optional first-boot scripts for further customization.
+- **Local Execution**: Checks for local files, clones the repo into `/tmp` if not already there.
+- **Script review Verification**: Set the local variable to true so that the script will be able to continue. This is to Protect you and me. I may remove this later.
 
 ### Future
 
-- **Interactive Partitioning**: Support for custom partitioning and dual-boot setups.
+- **NEXT: Interactive Partitioning**: Support for custom partitioning and dual-boot setups.
 - **Snapshot Management**: Automate snapshot creation and scheduling.
-- **Improved Local Execution**: Simplify running the scripts locally after cloning the repository.
+
+## Recent Changes and Improvements
+
+- **Improved Package and Service Management:**
+  - Added a package and service selection menu to make it more streamlined and customizable. 
+  - The review process includes a package verification step, allowing you to check for typos or missing packages before continuing.
+  - Saving user package and service selections added, making it easier to ensure your changes are not lost, and your selections are reproducible
+  - The scripts now use a single-layer YAML structure for `userpkgs.yml` (see below for the new format).
+  - Using arrays instead of strings for package and service lists now.
+
+- **Improved Local Execution:** 
+  - `archsetup.sh` now clones the installer and runs it locally if its not being launched locally. This means that you can clone it locally and make changes before running it, like using a custom `userpkgs.yml`.
+
+- **Bug Fixes and Reliability:**
+  - Implemented a few locations where steps are delayed are echoed to better catch errors.
 
 ## Running the Script
 
@@ -42,7 +58,7 @@ I have done my best to make this user-friendly for newer linux users, while cate
 1. Boot into the Arch Linux live environment.
 2. Run the following command to start the installation:
    ```bash
-   bash <(curl -s https://raw.githubusercontent.com/jwalk9000/archbase.btrfs/main/archsetup.sh)
+   bash <(curl -s https://raw.githubusercontent.com/jwalk9000/archbase.btrfs/main/dev/archsetup.sh)
    ```
 3. Follow the prompts to complete the installation process.
 
@@ -60,11 +76,10 @@ firstBoot.sh
 This file allows you to define additional packages and services to be installed during the setup. Example:
 ```yml
 packages:
-  user:
-    - neofetch
-    - htop
-    - sddm
-    - hyprland
+  - neofetch
+  - htop
+  - sddm
+  - hyprland
 services:
   - sddm
 ```
@@ -115,12 +130,11 @@ Defines optional GUI setup scripts for first-boot customization. Example:
 To run the scripts locally after cloning the repository:
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/archbase.btrfs.git
+   git clone https://github.com/yourusername/archbase.btrfs.git /tmp/archbase
    ```
-2. Navigate to the project directory and run the setup script:
+2. Execute the setup script:
    ```bash
-   cd archbase.btrfs
-   ./archsetup.sh
+   exec /tmp/archbase/archsetup.sh
    ```
 
 ## Contributing
