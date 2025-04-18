@@ -53,13 +53,19 @@ if [[ "$BRANCH" == "dev" ]]; then
   git push origin public-testing
   git push origin "$version"
 
-  # Add this script to .gitignore if not already present
+  # Add both script versions to .gitignore if not already present
   if ! grep -q "$SCRIPT_NAME" .gitignore; then
     echo "$SCRIPT_NAME" >> .gitignore
-    git add .gitignore
-    git commit -m "Add $SCRIPT_NAME to .gitignore for main branch hygiene"
-    git push origin public-testing
   fi
+  if ! grep -q "push-version.ps1" .gitignore; then
+    echo "push-version.ps1" >> .gitignore
+  fi
+  if ! grep -q "push-version.sh" .gitignore; then
+    echo "push-version.sh" >> .gitignore
+  fi
+  git add .gitignore
+  git commit -m "Add push-version scripts to .gitignore for main branch hygiene"
+  git push origin public-testing
 
   echo "$DATE | dev → public-testing | $version | $push_msg" >> "$LOG_FILE"
   echo "Pushed to public-testing as $version"

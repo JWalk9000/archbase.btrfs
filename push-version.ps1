@@ -55,10 +55,13 @@ if ($branch -eq "dev") {
 
     if (-not (Select-String -Path .gitignore -Pattern $scriptName -Quiet)) {
         Add-Content .gitignore $scriptName
-        git add .gitignore
-        git commit -m "Add $scriptName to .gitignore for main branch hygiene"
-        git push origin public-testing
     }
+    if (-not (Select-String -Path .gitignore -Pattern "push-version.sh" -Quiet)) {
+        Add-Content .gitignore "push-version.sh"
+    }
+    git add .gitignore
+    git commit -m "Add push-version scripts to .gitignore for main branch hygiene"
+    git push origin public-testing
 
     "$date | dev → public-testing | $version | $pushMsg" | Add-Content $LOG_FILE
     Write-Host "Pushed to public-testing as $version"
