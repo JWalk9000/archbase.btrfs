@@ -381,8 +381,8 @@ system_role() {
 package_lists() {
   # Combine all sources into temporary arrays
   # Ensure INSTALL_GPU_DRIVERS is treated as an array
-  local all_pkgs=("${BASE_PKGS[@]}" "${MICROCODE}" "${INSTALL_GPU_DRIVERS[@]}" "${KERNEL_PKG}" "${ROLE_PKGS[@]}" "${USERPKGS[@]}")
-  local all_svcs=("${BASE_SVCS[@]}" "${ROLE_SVCS[@]}" "${USER_SVCS[@]}")
+  local all_pkgs+=("${BASE_PKGS[@]}" "${MICROCODE}" "${INSTALL_GPU_DRIVERS[@]}" "${KERNEL_PKG}" "${ROLE_PKGS[@]}" "${USERPKGS[@]}" "${SYSTEM_PKGS[@]}")
+  local all_svcs+=("${BASE_SVCS[@]}" "${ROLE_SVCS[@]}" "${USER_SVCS[@]}" "${SYSTEM_SVCS[@]}")
 
   # Remove duplicates and assign to final variables
   mapfile -t SYSTEM_PKGS < <(printf "%s\n" "${all_pkgs[@]}" | grep -v '^\s*$' | sort -u)
