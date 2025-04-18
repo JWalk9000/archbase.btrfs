@@ -583,6 +583,7 @@ install_base_system() {
   display_services
   read -rp "$(echo -e ${INFO}Press ${INPUT}Enter${INFO} to proceed, ${INPUT}CTRL+C${INFO} to abort...${RESET})"
   info_print "=> Installing base system with selected role or custom packages"
+  echo "DEBUG: SYSTEM_PKGS: ${SYSTEM_PKGS[@]}"  
   sleep 2
   pacstrap /mnt "${SYSTEM_PKGS[@]}"}
 }
