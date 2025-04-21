@@ -39,13 +39,16 @@ if ($branch -eq "dev") {
     if (-not $branchExists) {
         git checkout -b public-testing
         git merge dev
+        # Versioning logic (after merge)
+        $lastTag = Get-LastTag "main"
+        $commitCount = git rev-list --count "$lastTag..public-testing"
     } else {
         git checkout public-testing
         git merge dev
+        # Versioning logic (after merge)
+        $lastTag = Get-LastTag "public-testing"
+        $commitCount = git rev-list --count "$lastTag..public-testing"
     }
-    # Versioning logic (after merge)
-    $lastTag = Get-LastTag "public-testing"
-    $commitCount = Get-CommitCount "public-testing"
     $version = "V1.$commitCount"
     # Update BRANCH variable in archsetup.sh to match the target branch
     (Get-Content archsetup.sh) -replace '^BRANCH=.*', 'BRANCH="public-testing"' | Set-Content archsetup.sh
