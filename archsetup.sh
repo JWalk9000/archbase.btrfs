@@ -2,7 +2,7 @@
 set -e
 
 REPO="jwalk9000/archbase.btrfs"
-BRANCH="dev"
+BRANCH="public-testing"
 LOCALREPO="/tmp/archbase"
 
 # Install script dependencies
