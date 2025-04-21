@@ -37,19 +37,16 @@ $pushMsg = Read-Host "Enter a brief log message for this push"
 if ($branch -eq "dev") {
     $branchExists = git branch --list public-testing
     if (-not $branchExists) {
-        # If public-testing doesn't exist, use main as the base for commit counting
-        $lastTag = Get-LastTag "main"
-        $commitCount = git rev-list --count "$lastTag..dev"
-        $version = "V1.$commitCount"
         git checkout -b public-testing
         git merge dev
     } else {
-        $lastTag = Get-LastTag "public-testing"
-        $commitCount = Get-CommitCount "public-testing"
-        $version = "V1.$commitCount"
         git checkout public-testing
         git merge dev
     }
+    # Versioning logic (after merge)
+    $lastTag = Get-LastTag "public-testing"
+    $commitCount = Get-CommitCount "public-testing"
+    $version = "V1.$commitCount"
     # Update BRANCH variable in archsetup.sh to match the target branch
     (Get-Content archsetup.sh) -replace '^BRANCH=.*', 'BRANCH="public-testing"' | Set-Content archsetup.sh
     git add archsetup.sh
@@ -75,6 +72,7 @@ if ($branch -eq "dev") {
 elseif ($branch -eq "public-testing") {
     git checkout main
     git merge public-testing
+    # Versioning logic (after merge)
     $lastTag = Get-LastTag "main"
     $major = Get-MajorVersion $lastTag
     $nextMajor = $major + 1
