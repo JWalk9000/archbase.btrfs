@@ -5,8 +5,8 @@ set -e
 # This script will be called by the main script, archsetup.sh, if the user chooses to install additional packages and enable services during the installation process.
 
 # Load required functions and variables
-source /tmp/archbase/colors.sh
-source /tmp/archbase/functions.sh
+source $LOCALREPO/colors.sh
+source $LOCALREPO/functions.sh
 
 # Variables to store user inputs
 USERPKGS=()

@@ -2,8 +2,8 @@
 set -e
 
 REPO="jwalk9000/archbase.btrfs"
-
 BRANCH="dev"
+LOCALREPO="/tmp/archbase"
 
 # Install script dependencies
 PKGDEPS=(
@@ -22,15 +22,16 @@ for PKG in "${PKGDEPS[@]}"; do
   fi
 done
 
-# Check if /tmp/archbase directory exists and is not empty
-if [ -d /tmp/archbase ] && [ "$(ls -A /tmp/archbase)" ]; then
-  echo "=> /tmp/archbase directory exists and is not empty. Proceeding to launch the main script."
+# Check if $LOCALREPO directory exists and is not empty
+if [ -d $LOCALREPO ] && [ "$(ls -A $LOCALREPO)" ]; then
+  echo "=> $LOCALREPO directory exists and is not empty. Proceeding to launch the main script."
 else
-  echo "=> /tmp/archbase directory does not exist or is empty. Cloning the repository."
-  git clone -b $BRANCH --single-branch https://github.com/$REPO.git /tmp/archbase
-  cd /tmp/archbase
-  chmod +x /tmp/archbase/*.sh
+  echo "=> $LOCALREPO directory does not exist or is empty. Cloning the repository."
+  sleep 1.5
+  git clone -b $BRANCH --single-branch https://github.com/$REPO.git $LOCALREPO
+  cd $LOCALREPO
+  chmod +x $LOCALREPO/*.sh
 fi
 
 # Run the main script
-exec /tmp/archbase/main.sh
+exec $LOCALREPO/main.sh

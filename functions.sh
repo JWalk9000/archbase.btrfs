@@ -718,7 +718,7 @@ post_install_scripts() {
   info_print "=> Downloading and installing firstBoot scripts"
   sleep 1.25
   for FILE in "${FB_FILES[@]}"; do 
-    curl -s "$RAW_GITHUB/$REPO/firstBoot/$FILE" | sed "s/user_placeholder/$NEW_USER/g" > /mnt/home/$NEW_USER/firstBoot/$FILE
+    cp "$LOCALREPO/firstBoot/$FILE" | sed "s/user_placeholder/$NEW_USER/g" > /mnt/home/$NEW_USER/firstBoot/$FILE
     done
     info_print "=> Setting permissions for firstBoot scripts"
     sleep 1.25

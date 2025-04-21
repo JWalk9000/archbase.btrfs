@@ -1,21 +1,21 @@
 [
   {
-    "name": "ML4W Hyperland-Full (AMD GPU ONLY!!)",
+    "name": "ML4W Hyprland-Full (AMD GPU ONLY!!)",
     "repo": "https://github.com/mylinuxforwork/dotfiles",
     "installer": "setup-arch.sh"
   },
   {
-    "name": "ML4W Hyperland-Starter",
+    "name": "ML4W Hyprland-Starter",
     "repo": "https://github.com/mylinuxforwork/hyprland-starter",
     "installer": "setup.sh"
   },
   {
-    "name": "Hyperland-Hyperdots(HYDE)",
+    "name": "Hyprland-Hyprdots(HYDE)",
     "repo": "https://github.com/prasanthrangan/hyprdots",
     "installer": "Scripts/install.sh"
   },
   {
-    "name": "Kool's Arch - Hyperland",
+    "name": "Kool's Arch - Hyprland",
     "repo": "https://github.com/JaKooLit/Arch-Hyprland",
     "installer": "install.sh"
   }
