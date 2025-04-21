@@ -2,13 +2,13 @@
 set -e
 
 
-source /tmp/archbase/colors.sh
-source /tmp/archbase/functions.sh
-source /tmp/archbase/packages.sh
+source $LOCALREPO/colors.sh
+source $LOCALREPO/functions.sh
+source $LOCALREPO/packages.sh
 
 # Set YAML file paths to absolute paths for consistency
-ROLES_YAML="/tmp/archbase/roles/roles.yml"
-USER_YAML="/tmp/archbase/roles/userpkgs.yml"
+ROLES_YAML="$LOCALREPO/roles/roles.yml"
+USER_YAML="$LOCALREPO/roles/userpkgs.yml"
 export ROLES_YAML
 export USER_YAML
 
