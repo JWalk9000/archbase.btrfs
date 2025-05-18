@@ -100,47 +100,30 @@ virt:
   kvm:
     packages:
       - qemu-guest-agent
-      - virtio-drivers
+      - vulkan-virtio
       - spice-vdagent
     services:
       - qemu-guest-agent
   oracle:
     packages:
       - virtualbox-guest-utils
-      - virtualbox-guest-modules-arch
-      - virtualbox-guest-dkms
     services:
       - vboxservice
   vmware:
     packages:
       - open-vm-tools
-      - open-vm-tools-modules
       - xf86-video-vmware
     services:
       - vmtoolsd
-  microsoft:
-    packages:
-      - hyperv
-      - hyperv-guest-tools
-      - hyperv-daemons
-    services:
-      - hv_fcopy_daemon
-      - hv_kvp_daemon
-      - hv_vss_daemon
-  xen:
-    packages:
-      - xen-tools
-    services:
-      - xen-qemu-dm
-      - xenstored
-      - xenconsoled
+
+
 
 # containers
   systemd-nspawn:
     packages:
       - systemd
       - iproute2
-      - dnsutils
+      - bind
       - net-tools
       - procps-ng
       - util-linux
