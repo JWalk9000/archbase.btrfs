@@ -135,7 +135,7 @@ virt:
     packages:
       - systemd
       - iproute2
-      - dnsutils
+      - bind
       - net-tools
       - procps-ng
       - util-linux
@@ -147,7 +147,7 @@ virt:
     packages:
       - systemd
       - iproute2
-      - dnsutils
+      - bind
       - net-tools
       - procps-ng
       - util-linux
@@ -159,7 +159,7 @@ virt:
     packages:
       - systemd
       - iproute2
-      - dnsutils
+      - bind
       - net-tools
       - procps-ng
       - util-linux

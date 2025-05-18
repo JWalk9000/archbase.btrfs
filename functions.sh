@@ -332,7 +332,7 @@ gpu_drivers() {
     yN_print "NVIDIA GPU detected. Would you like to install NVIDIA drivers?"
     read -rp "" INSTALL_GPU
     if [[ "$INSTALL_GPU" =~ ^([yY][eE][sS]|[yY])$ ]]; then
-      INSTALL_GPU_DRIVERS=("nvidia-dkms" "nvidia-utils" "nvidia-settings" "lib32-nvidia-utils" "egl-wayland")
+      INSTALL_GPU_DRIVERS=("nvidia-dkms" "nvidia-utils" "nvidia-settings" "egl-wayland")
     else
       info_print "=> Skipping NVIDIA driver installation"
       INSTALL_GPU_DRIVERS=""
@@ -718,10 +718,10 @@ post_install_scripts() {
   info_print "=> Downloading and installing firstBoot scripts"
   sleep 1.25
   for FILE in "${FB_FILES[@]}"; do 
-    cp "$LOCALREPO/firstBoot/$FILE" | sed "s/user_placeholder/$NEW_USER/g" > /mnt/home/$NEW_USER/firstBoot/$FILE
-    done
-    info_print "=> Setting permissions for firstBoot scripts"
-    sleep 1.25
+    cp "$LOCALREPO/firstBoot/$FILE" /mnt/home/$NEW_USER/firstBoot/$FILE
+  done
+  info_print "=> Setting permissions for firstBoot scripts"
+  sleep 1.25
   for FILE in "${FB_FILES[@]}"; do
     chmod +x /mnt/home/$NEW_USER/firstBoot/$FILE
   done
