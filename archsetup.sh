@@ -33,5 +33,10 @@ else
   chmod +x $LOCALREPO/*.sh
 fi
 
+# Ensure variables are exported for child scripts
+export REPO
+export BRANCH
+export LOCALREPO
+
 # Run the main script
 exec $LOCALREPO/main.sh
