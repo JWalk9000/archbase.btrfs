@@ -4,12 +4,6 @@ set -e
 # This is a script to allow users to partition their drives in case they want to install Arch Linux alongside another OS.
 # This script will be called by the main script, main.sh, if the user chooses to partition their drives during the installation process.
 
-# Ensure INSTALL_DISK is set
-if [ -z "$INSTALL_DISK" ]; then
-  echo "INSTALL_DISK is not set. Please set the INSTALL_DISK variable before running this script."
-  exit 1
-fi
-
 # Install required packages if not installed.
 if ! pacman -Qs parted > /dev/null; then
   pacman -Sy parted --noconfirm
@@ -63,12 +57,20 @@ detect_existing_os() {
 
 # Function to show free space on disk
 show_free_space() {
+  if [ -z "$INSTALL_DISK" ]; then
+    warning_print "No target disk selected. Please select a target disk first."
+    return 1
+  fi
   info_print "=> Available disk space on $INSTALL_DISK:"
   parted "$INSTALL_DISK" print free 2>/dev/null | grep "Free Space" || info_print "No free space information available"
 }
 
 # Function to resize existing partition (interactive)
 resize_existing_partition() {
+  if [ -z "$INSTALL_DISK" ]; then
+    warning_print "No target disk selected. Please select a target disk first."
+    return 1
+  fi
   info_print "=> Current partitions on $INSTALL_DISK:"
   lsblk "$INSTALL_DISK"
   echo ""
@@ -355,6 +357,13 @@ choice_partitioning() {
 
 # Main entry point for interactive partitioning
 main() {
+  # Ensure INSTALL_DISK is set when running directly
+  if [ -z "$INSTALL_DISK" ]; then
+    echo "INSTALL_DISK is not set. Please set the INSTALL_DISK variable before running this script directly."
+    echo "Example: export INSTALL_DISK=/dev/sda"
+    exit 1
+  fi
+  
   # Install required tools if not present
   if ! command -v yq &> /dev/null; then
     info_print "Installing yq for YAML processing..."

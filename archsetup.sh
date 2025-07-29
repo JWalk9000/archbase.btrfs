@@ -4,6 +4,7 @@ set -e
 REPO="jwalk9000/archbase.btrfs"
 BRANCH="dev"
 LOCALREPO="/tmp/archbase"
+export LOCALREPO
 
 # Install script dependencies
 PKGDEPS=(
