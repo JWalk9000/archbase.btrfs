@@ -558,6 +558,39 @@ default_partitioning() {
   fi
 }
 
+# Main partitioning function - gives users choice between default and interactive partitioning
+partitioning() {
+  display_header
+  info_print "=> Choose partitioning method:"
+  echo ""
+  choices_print "1" ") Default partitioning (automatic BTRFS setup)"
+  choices_print "2" ") Interactive partitioning (custom layouts, dual-boot support)"
+  echo ""
+  select_print "1" "2" "Partitioning method: " PARTITION_CHOICE
+  
+  case $PARTITION_CHOICE in
+    1)
+      info_print "=> Using default partitioning"
+      default_partitioning
+      ;;
+    2)
+      info_print "=> Starting interactive partitioning"
+      # Source the partitions.sh script if it contains functions we need
+      if [ -f "$LOCALREPO/partitions.sh" ]; then
+        source "$LOCALREPO/partitions.sh"
+        choice_partitioning
+      else
+        warning_print "Interactive partitioning script not found. Using default partitioning."
+        default_partitioning
+      fi
+      ;;
+    *)
+      warning_print "Invalid choice. Using default partitioning."
+      default_partitioning
+      ;;
+  esac
+}
+
 # Function to verify the script has been reviewed by the user.
 read_verify() {
   local VARIFY=true

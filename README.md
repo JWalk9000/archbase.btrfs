@@ -27,7 +27,13 @@ I have done my best to make this user-friendly for newer linux users, while cate
 
 ### Future
 
-- **NEXT: Interactive Partitioning**: Support for custom partitioning and dual-boot setups.
+- **Interactive Partitioning**: ✅ **IN PROGRESS** - Support for custom partitioning and dual-boot setups.
+  - ✅ YAML-based partition layout configuration
+  - ✅ Interactive menu for partition management
+  - ✅ Load/save partition layouts
+  - 🚧 OS detection and dual-boot setup
+  - 🚧 Automatic partition resizing
+  - 🚧 Custom Btrfs subvolume management
 - **Snapshot Management**: Automate snapshot creation and scheduling.
 
 ## Recent Changes and Improvements
@@ -58,7 +64,7 @@ I have done my best to make this user-friendly for newer linux users, while cate
 1. Boot into the Arch Linux live environment.
 2. Run the following command to start the installation:
    ```bash
-   bash <(curl -s https://raw.githubusercontent.com/jwalk9000/archbase.btrfs/main/dev/archsetup.sh)
+   bash <(curl -s https://raw.githubusercontent.com/jwalk9000/archbase.btrfs/dev/archsetup.sh)
    ```
 3. Follow the prompts to complete the installation process.
 

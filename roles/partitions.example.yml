@@ -1,0 +1,41 @@
+# Arch Linux Partition Layout Configuration Example
+# This file demonstrates the expected YAML format for partition layouts
+
+partitions:
+  # EFI System Partition (for UEFI systems)
+  - device: /dev/sda1
+    mountpoint: /boot/efi
+    fs: vfat
+    size: 512M
+    bootloader: grub
+
+  # Root partition with Btrfs subvolumes
+  - device: /dev/sda2
+    mountpoint: /
+    fs: btrfs
+    size: 40G
+    subvolumes:
+      - name: @
+      - name: @home
+      - name: @snapshots
+      - name: @var
+      - name: @tmp
+
+  # Optional: Separate home partition (alternative to @home subvolume)
+  # - device: /dev/sda3
+  #   mountpoint: /home
+  #   fs: ext4
+  #   size: 20G
+
+  # Optional: Swap partition
+  # - device: /dev/sda4
+  #   mountpoint: swap
+  #   fs: swap
+  #   size: 8G
+
+# Notes:
+# - For dual-boot setups, you can reference existing EFI partitions
+# - Use 'bootloader: grub' for the boot partition
+# - Btrfs subvolumes are only applicable to btrfs filesystems
+# - Size can be in G (gigabytes), M (megabytes), or specific sector counts
+# - For existing partitions (dual-boot), use 'action: preserve' (future feature)
