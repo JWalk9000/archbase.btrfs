@@ -104,16 +104,7 @@ until desktop_scripts; do : ; done
 # Choose a bootloader to install
 until choose_bootloader; do : ; done
 
-# Select target disk
-until target_disk; do : ; done
-
-# Unmount any existing partitions on the target disk
-until unmount_partitions; do : ; done
-
-# Erase existing partitions on the target disk
-until erase_partitions; do : ; done
-
-# create the partitions and filesystems
+# Partitioning workflow (includes disk selection, unmounting, erasing, and partitioning)
 until partitioning; do : ; done
 
 # Install the base system and user-selected packages

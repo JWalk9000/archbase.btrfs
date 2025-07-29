@@ -410,6 +410,18 @@ target_disk() {
   read -rp "$(info_print "Enter the number corresponding to the block device you want to install to: ")" choice
   INSTALL_DISK="/dev/${devices[$((choice-1))]}"
   echo ""
+  
+  # Check if selected disk is a USB device (potential live boot disk)
+  if lsblk -d -o NAME,TRAN "$INSTALL_DISK" 2>/dev/null | grep -q "usb"; then
+    warning_print "Warning: $INSTALL_DISK appears to be a USB device. This may be your live boot disk."
+    yN_print "Are you sure you want to use this disk for installation?"
+    read -rp "" usb_confirm
+    if [[ ! "$usb_confirm" =~ ^([yY][eE][sS]|[yY])$ ]]; then
+      warning_print "Disk selection cancelled. Please choose a different disk."
+      return 1
+    fi
+  fi
+  
   Yn_print "You chose: $INSTALL_DISK, is this correct?"
   read -rp "" confirm
   if [[ "$confirm" =~ ^([nN][oO]?|[nN])$ ]]; then
@@ -571,6 +583,13 @@ partitioning() {
   case $PARTITION_CHOICE in
     1)
       info_print "=> Using default partitioning"
+      # Select target disk for default partitioning
+      until target_disk; do : ; done
+      # Unmount any existing partitions on the target disk
+      until unmount_partitions; do : ; done
+      # Erase existing partitions on the target disk
+      until erase_partitions; do : ; done
+      # Proceed with default partitioning
       default_partitioning
       ;;
     2)
@@ -578,14 +597,21 @@ partitioning() {
       # Source the partitions.sh script if it contains functions we need
       if [ -f "$LOCALREPO/partitions.sh" ]; then
         source "$LOCALREPO/partitions.sh"
-        choice_partitioning
+        interactive_partitioning_workflow
       else
         warning_print "Interactive partitioning script not found. Using default partitioning."
+        # Fallback to default
+        until target_disk; do : ; done
+        until unmount_partitions; do : ; done
+        until erase_partitions; do : ; done
         default_partitioning
       fi
       ;;
     *)
       warning_print "Invalid choice. Using default partitioning."
+      until target_disk; do : ; done
+      until unmount_partitions; do : ; done
+      until erase_partitions; do : ; done
       default_partitioning
       ;;
   esac
