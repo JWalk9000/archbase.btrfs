@@ -2,7 +2,7 @@
 set -e
 
 # This is a script to allow users to partition their drives in case they want to install Arch Linux alongside another OS.
-# This script will be called by the main script, archsetup.sh, if the user chooses to partition their drives during the installation process.
+# This script will be called by the main script, main.sh, if the user chooses to partition their drives during the installation process.
 
 # Ensure INSTALL_DISK is set
 if [ -z "$INSTALL_DISK" ]; then
@@ -20,6 +20,9 @@ PARTITIONS=()
 SUBVOLUMES=()
 BOOTLOADER_SETUP=()
 
+# Path to YAML layout file (default)
+PARTITIONS_YAML="roles/partitions.yml"
+
 # Custom partioning subheader
 display_subheader() {
   info_print "
@@ -34,109 +37,104 @@ display_partitions() {
   lsblk -o NAME,SIZE,FSTYPE,MOUNTPOINT
 }
 
-# Function to create a new partition
-create_partition() {
-  read -rp "Enter the partition size (e.g., +20G): " SIZE
-  read -rp "Enter the partition type (e.g., primary): " TYPE
-  PARTITIONS+=("parted $INSTALL_DISK mkpart $TYPE btrfs 0% $SIZE")
+# Function to load partition layout from YAML
+load_partitions_yaml() {
+  if [ -f "$PARTITIONS_YAML" ]; then
+    info_print "Loading partition layout from $PARTITIONS_YAML..."
+    mapfile -t PARTITIONS < <(yq -r '.partitions[] | "device: " + .device + ", mountpoint: " + .mountpoint + ", fs: " + .fs + ", size: " + .size' "$PARTITIONS_YAML")
+    info_print "Loaded $((${#PARTITIONS[@]})) partitions from YAML."
+  else
+    warning_print "No $PARTITIONS_YAML file found. Starting with empty partition list."
+    PARTITIONS=()
+  fi
 }
 
-# Function to remove a partition
-remove_partition() {
-  read -rp "Enter the partition number to remove: " PART_NUM
-  PARTITIONS+=("parted $INSTALL_DISK rm $PART_NUM")
-}
-
-# Function to resize a partition
-resize_partition() {
-  read -rp "Enter the partition number to resize: " PART_NUM
-  read -rp "Enter the new size (e.g., +10G): " SIZE
-  PARTITIONS+=("parted $INSTALL_DISK resizepart $PART_NUM $SIZE")
-}
-
-# Function to create Btrfs subvolumes
-create_subvolumes() {
-  read -rp "Enter the mount point (e.g., /mnt): " MOUNT_POINT
-  SUBVOLUMES+=("mkdir -p $MOUNT_POINT")
-  SUBVOLUMES+=("mount -o subvol=@ $INSTALL_DISK $MOUNT_POINT")
-  SUBVOLUMES+=("btrfs subvolume create $MOUNT_POINT/@home")
-  SUBVOLUMES+=("btrfs subvolume create $MOUNT_POINT/@snapshots")
-  SUBVOLUMES+=("btrfs subvolume create $MOUNT_POINT/@var_log")
-  SUBVOLUMES+=("umount $MOUNT_POINT")
-}
-
-# Function to set up the boot partition and bootloader
-setup_bootloader() {
-  read -rp "Enter the device for the boot partition (e.g., /dev/sda1): " BOOT_DEVICE
-  read -rp "Enter the mount point for the boot partition (e.g., /mnt/boot): " BOOT_MOUNT
-  BOOTLOADER_SETUP+=("mkdir -p $BOOT_MOUNT")
-  BOOTLOADER_SETUP+=("mount $BOOT_DEVICE $BOOT_MOUNT")
-  BOOTLOADER_SETUP+=("pacman -Sy grub --noconfirm")
-  BOOTLOADER_SETUP+=("grub-install --target=x86_64-efi --efi-directory=$BOOT_MOUNT --bootloader-id=GRUB")
-  BOOTLOADER_SETUP+=("grub-mkconfig -o $BOOT_MOUNT/grub/grub.cfg")
-}
-
-# Function to execute the actions
-execute_actions() {
-  for action in "${PARTITIONS[@]}"; do
-    echo "Executing: $action"
-    eval "$action"
+# Function to save partition layout to YAML
+save_partitions_yaml() {
+  info_print "Saving partition layout to $PARTITIONS_YAML..."
+  echo "partitions:" > "$PARTITIONS_YAML"
+  for entry in "${PARTITIONS[@]}"; do
+    device=$(echo "$entry" | grep -o 'device: [^,]*' | cut -d' ' -f2)
+    mountpoint=$(echo "$entry" | grep -o 'mountpoint: [^,]*' | cut -d' ' -f2)
+    fs=$(echo "$entry" | grep -o 'fs: [^,]*' | cut -d' ' -f2)
+    size=$(echo "$entry" | grep -o 'size: [^,]*' | cut -d' ' -f2)
+    echo "  - device: $device" >> "$PARTITIONS_YAML"
+    echo "    mountpoint: $mountpoint" >> "$PARTITIONS_YAML"
+    echo "    fs: $fs" >> "$PARTITIONS_YAML"
+    echo "    size: $size" >> "$PARTITIONS_YAML"
   done
-
-  for action in "${SUBVOLUMES[@]}"; do
-    echo "Executing: $action"
-    eval "$action"
-  done
-
-  for action in "${BOOTLOADER_SETUP[@]}"; do
-    echo "Executing: $action"
-    eval "$action"
-  done
+  info_print "Partition layout saved."
 }
 
-# Main menu
-while true; do
-  echo "Custom Partitioning Menu:"
-  echo "1) Display current partitions"
-  echo "2) Create a new partition"
-  echo "3) Remove a partition"
-  echo "4) Resize a partition"
-  echo "5) Create Btrfs subvolumes"
-  echo "6) Set up bootloader"
-  echo "7) Confirm and execute actions"
-  echo "8) Exit"
-  read -rp "Choose an option: " OPTION
+# Improved interactive menu
+partitioning_menu() {
+  while true; do
+    display_subheader
+    echo "Interactive Partitioning Menu:"
+    echo "1) Display current partitions (lsblk)"
+    echo "2) Load partition layout from YAML"
+    echo "3) Save current layout to YAML"
+    echo "4) Add/Edit a partition entry"
+    echo "5) Remove a partition entry"
+    echo "6) Resize a partition (interactive)"
+    echo "7) List/Edit Btrfs subvolumes"
+    echo "8) Bootloader options"
+    echo "9) Confirm and exit menu"
+    echo "0) Exit without saving"
+    read -rp "Choose an option: " OPTION
 
-  case $OPTION in
-    1) display_partitions ;;
-    2) create_partition ;;
-    3) remove_partition ;;
-    4) resize_partition ;;
-    5) create_subvolumes ;;
-    6) setup_bootloader ;;
-    7)
-      echo "Summary of actions to be performed:"
-      echo "Partitions:"
-      for action in "${PARTITIONS[@]}"; do
-        echo "- $action"
-      done
-      echo "Subvolumes:"
-      for action in "${SUBVOLUMES[@]}"; do
-        echo "- $action"
-      done
-      echo "Bootloader setup:"
-      for action in "${BOOTLOADER_SETUP[@]}"; do
-        echo "- $action"
-      done
-      read -rp "Do you want to proceed with these actions? (y/N): " CONFIRM
-      if [[ "$CONFIRM" =~ ^([yY][eE][sS]|[yY])$ ]]; then
-        execute_actions
+    case $OPTION in
+      1) display_partitions ;;
+      2) load_partitions_yaml ;;
+      3) save_partitions_yaml ;;
+      4)
+        read -rp "Device (e.g., /dev/sda2): " device
+        read -rp "Mountpoint (e.g., /): " mountpoint
+        read -rp "Filesystem (e.g., btrfs): " fs
+        read -rp "Size (e.g., 40G): " size
+        PARTITIONS+=("device: $device, mountpoint: $mountpoint, fs: $fs, size: $size")
+        ;;
+      5)
+        echo "Current partition entries:"
+        for i in "${!PARTITIONS[@]}"; do
+          echo "$i) ${PARTITIONS[$i]}"
+        done
+        read -rp "Enter the number to remove: " idx
+        unset 'PARTITIONS[idx]'
+        PARTITIONS=(${PARTITIONS[@]})
+        ;;
+      6)
+        echo "Current partition entries:"
+        for i in "${!PARTITIONS[@]}"; do
+          echo "$i) ${PARTITIONS[$i]}"
+        done
+        read -rp "Enter the number to resize: " idx
+        read -rp "Enter new size (e.g., 50G): " newsize
+        PARTITIONS[$idx]=$(echo "${PARTITIONS[$idx]}" | sed "s/size: [^,]*/size: $newsize/")
+        ;;
+      7)
+        echo "Btrfs subvolumes editing is not yet implemented in this menu."
+        ;;
+      8)
+        echo "Bootloader options editing is not yet implemented in this menu."
+        ;;
+      9)
+        echo "Exiting interactive partitioning menu."
+        break
+        ;;
+      0)
+        echo "Exiting without saving."
         exit 0
-      else
-        echo "Actions canceled."
-      fi
-      ;;
-    8) exit 0 ;;
-    *) echo "Invalid option. Please try again." ;;
-  esac
-done
+        ;;
+      *) echo "Invalid option. Please try again." ;;
+    esac
+  done
+}
+
+choice_partitioning() {
+  while true; do
+    display_subheader
+    echo "Choose partitioning method:"
+    echo "1) Manual partitioning"
+    echo "2) Automatic partitioning (YAML layout)"
+    echo "3) Exit

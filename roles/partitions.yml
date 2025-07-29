@@ -1,0 +1,14 @@
+partitions:
+  - mountpoint: /
+    device: /dev/sda2
+    fs: btrfs
+    size: 40G
+    subvolumes:
+      - name: @
+      - name: @home
+      - name: @snapshots
+  - mountpoint: /boot/efi
+    device: /dev/sda1
+    fs: vfat
+    size: 512M
+    bootloader: grub

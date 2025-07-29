@@ -5,6 +5,7 @@ set -e
 source $LOCALREPO/colors.sh
 source $LOCALREPO/functions.sh
 source $LOCALREPO/packages.sh
+source $LOCALREPO/partitions.sh
 
 # Set YAML file paths to absolute paths for consistency
 ROLES_YAML="$LOCALREPO/roles/roles.yml"

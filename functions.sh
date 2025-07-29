@@ -466,7 +466,7 @@ erase_partitions() {
   fi
 }
 
-partitioning() {
+default_partitioning() {
   install_message
   # Partition the disk
   if [ -d /sys/firmware/efi/efivars ]; then
